@@ -18,9 +18,9 @@ export async function loadDB() {
 
 export async function doQuery(sql, struct) {
 	// #ifdef APP-PLUS
-	if (!await plus.sqlite.isOpenDatabase({
+	if (!plus.sqlite.isOpenDatabase({
 			name: 'railgo',
-			path: '_doc/railgo.db'
+			path: '_doc/railgo.sqlite'
 		})) {
 		throw new Error("SQLite DB hasn't opened yet");
 	}
