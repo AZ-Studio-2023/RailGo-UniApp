@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="min-height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -64,7 +64,7 @@
 						<br>
 					</view>
 					<navigator v-for="(item,index) in showTrains" :key="index"
-						:url="'/pages/train/trainResult?keyword='+item.number+'&date='+new Date().toISOString().slice(0, 10).replaceAll('-', '')">
+						:url="'/pages/train/trainResult?keyword='+item.code+'&date='+getToday()">
 						<view class="ux-bg-white ux-border-radius ux-mt-small ux-flex">
 							<view style="border-bottom-left-radius: 10rpx; border-top-left-radius:10rpx;"
 								:style="'background-color:'+colorMap[item.number[0]]">
@@ -74,13 +74,15 @@
 								style="width:100%;">
 								<view style="width:calc(100% - 60rpx);">
 									<view class="ux-flex ux-space-between">
+										<!--
 										<view>
 											<text class="consolas"
 												style="font-size:40rpx;">{{item.numberKind}}{{item.numberFull.join("/").replaceAll(item.numberKind, "")}}</text>
 											<br>
 											<text class="ux-text-small">{{item.timetable[0].station}} ⋙
-												{{item.timetable[item.timetable.length -1].station}}</text>
+												{{item.timetable[item.timetable.length-1].station}}</text>
 										</view>
+										-->
 										<view class="ux-flex" style="padding-top:8rpx;">
 											<view class="ux-text-center ux-mr-small" style="min-width:80rpx">
 												<text class="ux-text"
@@ -104,8 +106,8 @@
 												<br>
 												<text class="ux-text-small ux-opacity-5">停车</text>
 											</view>
-										</view>
 
+										</view>
 									</view>
 								</view>
 								<text class="ux-text"><text class="icon">&#xe5c8;</text></text>
@@ -219,12 +221,6 @@
 	</uni-popup>
 </template>
 <script>
-	/*
-	import {
-		query,
-		queryMainKey
-	} from "@/scripts/jsonDB.js";
-	*/
 	import {
 		doQuery
 	} from "@/scripts/sqlite.js";
@@ -276,14 +272,20 @@
 			fillInData: async function() {
 				this.data = toRaw(await doQuery("SELECT * FROM stations WHERE telecode='" + this.keyword + "'",
 					KEYS_STRUCT_STATIONS))[0];
-				this.trains = toRaw(await doQuery("SELECT * FROM trains WHERE number IN ('" + this.data.trainList.join(
-					"','") + "')", KEYS_STRUCT_TRAINS));
+				if (this.data.trainList.length == 0) {
+					return;
+				}
+				this.trains = toRaw(await doQuery(
+					"SELECT code, number, numberFull, numberKind, timetable FROM trains WHERE number IN ('" +
+					this.data.trainList.join("','") + "')", ["code", "number", "numberFull", "numberKind",
+						"timetable"
+					]));
 				this.trains.forEach((item, index) => {
 					item.indexStopThere = item.timetable.findIndex((tt) => {
 						return tt.stationTelecode == this.keyword;
 					});
 					this.trains[index] = item;
-				});
+				}, this);
 				this.radioSortChange({
 					detail: {
 						value: "departure"
@@ -318,10 +320,12 @@
 
 					case "departure":
 						this.showTrains = this.trains.sort((a, b) => {
-							if (a.timetable[a.indexStopThere].depart > b.timetable[b.indexStopThere].depart) {
+							if (a.timetable[a.indexStopThere].depart > b.timetable[b.indexStopThere]
+								.depart) {
 								return 1;
 							}
-							if (a.timetable[a.indexStopThere].depart < b.timetable[b.indexStopThere].depart) {
+							if (a.timetable[a.indexStopThere].depart < b.timetable[b.indexStopThere]
+								.depart) {
 								return -1;
 							}
 							return 0;
@@ -363,6 +367,10 @@
 							.filterSourceState.includes("A"))
 					);
 				});
+			},
+			getToday: function() {
+				const date = new Date();
+				return `${date.getFullYear()}${('0' + (date.getMonth() + 1)).slice(-2)}${('0' + date.getDate()).slice(-2)}`;
 			}
 		}
 	}

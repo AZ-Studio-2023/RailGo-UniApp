@@ -1,6 +1,6 @@
 <template>
-	<view class="ux-bg-grey6" style="min-height:100vh;">
-		<view class="ux-bg-primary">&nbsp;</view>
+	<view class="ux-bg-grey6 page">
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding-large">
 			<view class="ux-mt-large">
 				<text class="ux-h1">马上开始...</text><br><br>
@@ -90,11 +90,6 @@
 				// 加载数据库
 				this.err = "正在加载数据库...";
 				await loadDB();
-
-				// 验证数据库是否加载成功
-				if (!isLoaded) {
-					throw new Error("数据库加载失败");
-				}
 
 				// 设置完成标志并跳转
 				uni.setStorageSync("oobe", true);

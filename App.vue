@@ -1,5 +1,5 @@
 <script>
-	const nauth = true;
+	const nauth = false;
 	const version = "1.0.0 Pre 2"
 	const version_number = 1
 	import uniGet from "./scripts/req";
@@ -176,6 +176,15 @@
 
 	.va {
 		vertical-align: middle;
+	}
+
+	.status-bar {
+		height: calc(var(--status-bar-height) + 10px);
+		width: 100vw;
+	}
+
+	.page {
+		min-height: 100vh;
 	}
 
 	/* UXUI */

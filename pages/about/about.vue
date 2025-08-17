@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="height: 100vh; position: relative;">
+	<view class="ux-bg-grey5 page" style="position: relative;">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>

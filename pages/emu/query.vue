@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -17,7 +17,8 @@
 					@input="inputData" />
 			</view>
 			<view>
-				<switch checked class="ux-pb-small" color="#114598" style="transform:scale(0.7);margin-left:-1vh;" @change="futureData"/>
+				<switch checked class="ux-pb-small" color="#114598" style="transform:scale(0.7);margin-left:-1vh;"
+					@change="futureData" />
 				<text class="va">查询未来车次信息</text>
 			</view>
 			<button type="primary" style="background-color:#114598;color:#ffffff;" hover-class="ux-tap"
@@ -66,7 +67,7 @@
 			inputData: function(e) {
 				this.keyword = e.detail.value;
 			},
-			futureData: function(e){
+			futureData: function(e) {
 				this.future = e.detail.value;
 			}
 		}

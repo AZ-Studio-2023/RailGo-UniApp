@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="min-height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -89,8 +89,10 @@
 				if (this.keyword == "") {
 					return;
 				}
-				this.stationsList = toRaw(await doQuery("SELECT * FROM stations WHERE name LIKE '%" + this.keyword +
-					"%'", KEYS_STRUCT_STATIONS)).sort((a, b) => {
+				this.stationsList = toRaw(await doQuery(
+					"SELECT name, telecode, pinyin, pinyinTriple, type FROM stations WHERE name LIKE '%" + this
+					.keyword +
+					"%'", ["name", "telecode", "pinyin", "pinyinTriple", "type"])).sort((a, b) => {
 					// 按拼音排序
 					if (a.pinyin < b.pinyin) {
 						return -1;

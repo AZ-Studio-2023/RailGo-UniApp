@@ -1,6 +1,6 @@
 <template>
-	<view class="ux-bg-grey6" style="min-height:100vh;">
-		<view class="ux-bg-primary">&nbsp;</view>
+	<view class="ux-bg-grey6 page">
+		<view class="ux-bg-primary status-bar"></view>
 		<uni-popup ref="next_add" type="dialog">
 			<uni-popup-dialog cancelText="取消" confirmText="继续" title="提示" content="需要现在下载离线数据库。"
 				@confirm="confirmDownloadNow"></uni-popup-dialog>
@@ -10,8 +10,7 @@
 		</uni-popup>
 		<uni-popup ref="next_not_wifi" type="dialog">
 			<uni-popup-dialog cancelText="取消" confirmText="继续" title="提示"
-				content="您现在正在使用数据流量上网。下载数据库大约需要花费50M左右的流量，确定要下载吗？"
-				@confirm="confirmDownloadNow"></uni-popup-dialog>
+				content="您现在正在使用数据流量上网。下载数据库大约需要花费50M左右的流量，确定要下载吗？" @confirm="confirmDownloadNow"></uni-popup-dialog>
 		</uni-popup>
 		<uni-popup ref="message" type="message">
 			<uni-popup-message :duration="3000" type="error" message="该模式暂时无法使用"></uni-popup-message>
@@ -61,7 +60,7 @@
 				"msgType": "success",
 			}
 		},
-methods: {
+		methods: {
 			finish: function() {
 				if (this.checked == "network") {
 					this.$refs.message.open();

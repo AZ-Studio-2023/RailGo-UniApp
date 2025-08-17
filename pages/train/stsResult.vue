@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="min-height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -32,7 +32,7 @@
 			</view>
 			<br>
 			<navigator v-for="(item, index) in this.showData" :key="index"
-				:url="'/pages/train/trainResult?keyword='+item.number+'&date='+this.date">
+				:url="'/pages/train/trainResult?keyword='+item.code+'&date='+this.date">
 				<view class="ux-bg-white ux-border-radius ux-mb-small ux-flex">
 					<view style="border-bottom-left-radius: 10rpx; border-top-left-radius:10rpx;"
 						:style="'background-color:'+this.colorMap[item.number[0]]">
@@ -56,7 +56,7 @@
 							<br>
 							<view style="border-top: 0.1rpx solid #757575;width:30vw;margin: 5rpx 0;"></view>
 							<text class="ux-text-small ux-opacity-5">
-								{{item.passTime}}
+								{{this.displayTimeDifference(item.passTime)}}
 							</text>
 						</view>
 						<view>
@@ -213,26 +213,30 @@
 					uni.showLoading({
 						title: "加载中"
 					});
-					let fromStn = toRaw(await doQuery("SELECT * FROM stations WHERE telecode='" + this.from + "'",
-						KEYS_STRUCT_STATIONS))[0];
-					let toStn = toRaw(await doQuery("SELECT * FROM stations WHERE telecode='" + this.to + "'",
-						KEYS_STRUCT_STATIONS))[0];
+					let fromStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.from +
+						"'",
+						["trainList"]))[0];
+					let toStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.to + "'",
+						["trainList"]))[0];
 					if (fromStn.trainList.length == 0 || toStn.trainList.length == 0) {
 						uni.hideLoading();
 						this.$refs.error_noky.open();
 						return;
 					}
 					let d = [];
-					for (let item of fromStn.trainList
-							.filter((i) => {
-								return toStn.trainList.includes(i)
-							})) {
-						let k = toRaw(await doQuery("SELECT * FROM trains WHERE number='" + item + "'",
-							KEYS_STRUCT_TRAINS))[0];
+					let all = toRaw(await doQuery(
+						"SELECT code, number, numberFull, numberKind, timetable, rundays FROM trains WHERE number IN ('" +
+						fromStn.trainList
+						.filter((i) => {
+							return toStn.trainList.includes(i)
+						}).join("','") + "')", ["code", "number", "numberFull", "numberKind", "timetable",
+							"rundays"
+						]));
+					all.forEach((k) => {
 						let fromPos = -1;
 						let toPos = -1;
 						if (!k.rundays.includes(this.date)) {
-							continue;
+							return;
 						}
 						for (var i = 0; i < k.timetable.length; i++) {
 							if (k.timetable[i].stationTelecode == this.from) {
@@ -248,12 +252,12 @@
 							k.toPos = toPos;
 							k.showFlag = true;
 							k.passTime = this.calculateTimeDifference(k.timetable[k.fromPos].depart, k
-								.timetable[k
-									.toPos]
-								.arrive, k.timetable[k.toPos].day - k.timetable[k.fromPos].day);
+								.timetable[k.toPos].arrive, k.timetable[k.toPos].day - k.timetable[k
+									.fromPos].day);
 							this.data.push(k);
 						}
-					}
+
+					}, this);
 					this.showData = this.data;
 					this.radioSortChange({
 						detail: {
@@ -265,14 +269,15 @@
 						this.$refs.error_nosuch.open();
 						return;
 					}
+					uni.hideLoading();
 				} catch (error) {
+					plus.nativeUI.alert(error);
 					console.error("数据加载失败", error);
 					uni.showToast({
 						title: "加载失败",
 						duration: 1000
 					});
 				}
-				uni.hideLoading();
 			},
 			calculateTimeDifference: function(startTime, endTime, daysLater) {
 				const parseTime = (timeStr) => {
@@ -288,6 +293,9 @@
 				const endTotalMinutes = end.hours * 60 + end.minutes + (daysLater * 24 * 60);
 				let differenceMinutes = endTotalMinutes - startTotalMinutes;
 				if (differenceMinutes < 0) differenceMinutes += 24 * 60;
+				return differenceMinutes;
+			},
+			displayTimeDifference: function(differenceMinutes) {
 				const hours = Math.floor(differenceMinutes / 60);
 				const minutes = differenceMinutes % 60;
 				return `${hours}h${minutes.toString().padStart(2, '0')}m`;

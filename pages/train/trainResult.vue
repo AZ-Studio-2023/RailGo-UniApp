@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="min-height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -213,7 +213,7 @@
 				<uni-section title="交路" type="line" style="background-color: transparent;"
 					title-font-size="25rpx"></uni-section>
 				<navigator v-for="(item,index) in (carData.diagram || [])" :key="index"
-					:url="'/pages/train/trainResult?keyword='+item.train_num+'&date='+date">
+					:url="'/pages/train/trainResult?keyword='+item.code+'&date='+date">
 					<view class="ux-bg-white ux-border-radius ux-mt-small ux-flex">
 						<view style="border-bottom-left-radius: 10rpx; border-top-left-radius:10rpx;"
 							:style="'background-color:'+colorMap[item.train_num[0]]">
@@ -223,7 +223,8 @@
 							style="width:100%;">
 							<view style="width:calc(100% - 70px);">
 								<view class="ux-flex ux-align-items-center">
-									<text class="consolas" style="font-size:40rpx;">{{item.train_num || ''}}</text>
+									<text class="consolas"
+										style="font-size:40rpx;">{{item.numberFull.join("/") || ''}}</text>
 								</view>
 								<text class="ux-text-small">{{item.from ? item.from[0] : ''}}
 									{{item.from ? item.from[1] : ''}} ⋙ {{item.to ? item.to[0] : ''}}
@@ -300,9 +301,9 @@
 				"colorMap": TRAIN_KIND_COLOR_MAP,
 				"carMap": CAR_PERFORMANCE,
 				"delay": [],
-				"title": '',
 				"date": "",
 				"train": "",
+				"keyword": "",
 				"cardColor": "#114598",
 				"topTabList": [{
 					name: '时刻',
@@ -315,8 +316,7 @@
 			}
 		},
 		onLoad(options) {
-			this.train = options.keyword ? options.keyword.split("/")[0] : '';
-			this.title = this.train;
+			this.keyword = options.keyword;
 			this.date = options.date || '';
 			this.fillInData(); // 调用数据填充方法
 		},
@@ -331,10 +331,11 @@
 			},
 			fillInData: async function() {
 				try {
-					if (!this.title) return;
-
-					const result = await doQuery("SELECT * FROM trains WHERE numberFull LIKE '%\"" + this.train +
-						"\"%'", KEYS_STRUCT_TRAINS);
+					if (!this.keyword) {
+						return;
+					}
+					const result = await doQuery("SELECT * FROM trains WHERE code='" + this.keyword +
+						"'", KEYS_STRUCT_TRAINS);
 					if (result && result.length > 0) {
 						this.carData = {
 							numberKind: '',
@@ -349,6 +350,13 @@
 							diagram: [],
 							...toRaw(result[0])
 						};
+
+						for (var i = 0; i < this.carData.diagram.length; i++) {
+							let dg = toRaw(await doQuery("SELECT code, numberFull FROM trains WHERE number='" + this
+								.carData.diagram[i].train_num + "'"))[0];
+							this.carData.diagram[i].code = dg.code;
+							this.carData.diagram[i].numberFull = dg.numberFull;
+						}
 
 						// 确保 timetable 中的每个项目都有必要字段
 						this.carData.timetable = (this.carData.timetable || []).map(item => ({

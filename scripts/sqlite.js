@@ -29,23 +29,22 @@ export async function doQuery(sql, struct) {
 			name: 'railgo',
 			sql: sql,
 			success: data => {
+				let res = [];
 				data.forEach((v, i) => {
-					let item = {};
-					for (var x = 0; x < v.length; x++) {
+					for (let k in v) {
 						try {
-							if (v[x].includes("[") || v[x].includes("{")) {
-								v[x] = JSON.parse(v[x]);
+							if (v[k].includes("[") || v[k].includes("{")) {
+								v[k] = JSON.parse(v[k]);
 							}
 						} catch (e) {
 							;
 						}
-						item[struct[x]] = v[x];
 					}
-					data[i] = item;
+					res.push(v);
 				});
-				resolve(data);
+				resolve(res);
 			},
-			fail: () => {
+			fail: (e) => {
 				throw new Error("Failed to execute the SQL");
 			}
 		})

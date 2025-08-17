@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="min-height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-pl ux-pr ux-pt">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -40,7 +40,7 @@
 								<view v-for="(item,index) in placeholderData" :key="index"
 									class="ux-flex ux-space-between ux-align-items-center"
 									style="padding:0.4rem 0.5rem;" hover-class="ux-bg-grey5"
-									@click='inputPlacehold(item.numberFull.join("/"))'>
+									@click='inputPlacehold(item)'>
 									<view class="ux-flex ux-space-around">
 										<view style="font-size:0.96rem;">
 											{{item.numberFull.join("/")}}
@@ -129,9 +129,10 @@
 		data() {
 			return {
 				"keyword": "",
+				"target": "",
 				"colorMap": TRAIN_KIND_COLOR_MAP,
-				"date": new Date().toISOString().slice(0, 10).replace("-", "").replace("-", ""),
-				"today": new Date().toISOString().slice(0, 10),
+				"date": this.getToday(),
+				"today": this.getTodayRaw(),
 				"placeholderData": [],
 				"placeholderCollapsed": false,
 				"topTabList": [{
@@ -176,7 +177,7 @@
 						return;
 					}
 					uni.navigateTo({
-						url: "/pages/train/trainResult?keyword=" + this.keyword + "&date=" + this.date
+						url: "/pages/train/trainResult?keyword=" + this.target + "&date=" + this.date
 					});
 				} else {
 					uni.navigateTo({
@@ -189,15 +190,18 @@
 				this.keyword = e.detail.value;
 				if (this.keyword.length >= 2) {
 					if (this.keyword[0] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) {
-						this.placeholderData = toRaw(await doQuery("SELECT * FROM trains WHERE numberFull LIKE '%\"_" +
+						this.placeholderData = toRaw(await doQuery(
+							"SELECT code, numberFull, timetable FROM trains WHERE numberFull LIKE '%\"_" +
 							this.keyword + "%\"%' OR numberFull LIKE '%\"" + this.keyword + "%\"'",
-							KEYS_STRUCT_TRAINS))
+							["code", "numberFull", "timetable"]));
 					} else {
-						this.placeholderData = toRaw(await doQuery("SELECT * FROM trains WHERE numberFull LIKE '%" +
-							this.keyword + "%'", KEYS_STRUCT_TRAINS));
+						this.placeholderData = toRaw(await doQuery(
+							"SELECT code, numberFull, timetable FROM trains WHERE numberFull LIKE '%" +
+							this.keyword + "%'", ["code", "numberFull", "timetable"]));
 					}
-					this.placeholderData = this.placeholderData.sort((a, b) => parseInt(a.numberFull.join("/").match(
-						/\d+/)[0]) - parseInt(b.numberFull
+					this.placeholderData = this.placeholderData.sort((a, b) => parseInt(a.numberFull.join("/")
+						.match(
+							/\d+/)[0]) - parseInt(b.numberFull
 						.join("/").match(/\d+/)[0]));
 					this.placeholderCollapsed = false;
 				}
@@ -210,7 +214,8 @@
 				return this.keyword.length >= 2 && !this.placeholderCollapsed && this.placeholderData.length != 0;
 			},
 			inputPlacehold: function(ph) {
-				this.keyword = ph;
+				this.keyword = ph.numberFull.join("/");
+				this.target = ph.code;
 				this.placeholderCollapsed = true;
 			},
 			swapSts: function(e) {
@@ -223,6 +228,14 @@
 			},
 			tabChange: function(e) {
 				this.selectIndex = e.index;
+			},
+			getToday: function() {
+				const date = new Date();
+				return `${date.getFullYear()}${('0' + (date.getMonth() + 1)).slice(-2)}${('0' + date.getDate()).slice(-2)}`;
+			},
+			getTodayRaw: function() {
+				const date = new Date();
+				return `${date.getFullYear()}-${('0' + (date.getMonth() + 1)).slice(-2)}-${('0' + date.getDate()).slice(-2)}`;
 			}
 		}
 	}

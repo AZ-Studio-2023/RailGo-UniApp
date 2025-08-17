@@ -1,7 +1,7 @@
 <template>
-	<view class="ux-bg-grey5" style="min-height:100vh;">
+	<view class="ux-bg-grey5 page">
 		<!-- headers begin -->
-		<view class="ux-bg-primary">&nbsp;</view>
+		<view class="ux-bg-primary status-bar"></view>
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
@@ -35,8 +35,8 @@
 				<text class="ux-bold">信息仅供参考 请以铁路运营企业实际运用为准</text>
 			</view>
 		</view>
-		</view>
-	
+	</view>
+
 </template>
 
 <script>
@@ -50,10 +50,16 @@
 		},
 		onShow() {
 			let selection = uni.getStorageSync("station_query_field");
-			if(!selection){
-				uni.setStorageSync("station_query_field", {name: "北京", telecode: "BJP"});
+			if (!selection) {
+				uni.setStorageSync("station_query_field", {
+					name: "北京",
+					telecode: "BJP"
+				});
 				this.keyword = "北京";
-				this.callbackItem = {name: "北京", telecode: "BJP"};
+				this.callbackItem = {
+					name: "北京",
+					telecode: "BJP"
+				};
 			}
 			this.keyword = selection.name;
 			this.callbackItem = selection;
@@ -70,7 +76,8 @@
 					})
 				}
 				uni.navigateTo({
-					url: "/pages/station/result?keyword=" + this.callbackItem.telecode + "&vague=" + this.vagueData
+					url: "/pages/station/result?keyword=" + this.callbackItem.telecode + "&vague=" + this
+						.vagueData
 				})
 			},
 			vague: function(e) {
