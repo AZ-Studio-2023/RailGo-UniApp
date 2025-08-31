@@ -71,6 +71,7 @@
 						<text class="icon">&#xe5c8;</text>
 					</view>
 				</navigator>
+				
 				<view class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-ml-small"
 					style="flex:auto;width:1rpx;">
 					<text class="icon section-icon ux-color-blue">&#xe1b7;</text>
@@ -85,6 +86,21 @@
 					</view>
 					<text class="ux-text-small">施工中 请静候佳音</text>
 				</view>
+			</view><br>
+			<view class="ux-flex ux-rows ux-wrap ux-space-between">		
+				<navigator class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mr-small"
+					style="flex:auto;width:1rpx;" hover-class="ux-tap" url="/pages/speed/speed">
+					<text class="icon section-icon ux-color-brown">&#xe55e;</text>
+					<br>
+					<text class="ux-text">实时测速</text>
+					<br>
+					<text class="ux-text-small ux-opacity-8">实时使用GPS进行速度测试。</text>
+					<br>
+					<br>
+					<view class="ux-text-right ux-mr-small">
+						<text class="icon">&#xe5c8;</text>
+					</view>
+				</navigator>
 			</view>
 		</view>
 		<br>

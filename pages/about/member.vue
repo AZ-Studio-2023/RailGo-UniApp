@@ -65,12 +65,16 @@
 			<uni-section title="其他" type="line" style="background-color: transparent;"
 				title-font-size="35rpx"></uni-section>
 			<view class="ux-flex ux-space-around ux-justify-content-center">
-				<view class="ux-text-center ux-pl ux-pr">China EMU <br> 动车组萌化车头图
-				</view>
 				<view class="ux-text-center ux-pl ux-pr">
 					慈云数据 <br> 提供云计算支持
 				</view>
 			</view>
+		</view>
+		<view class="ux-pl ux-pr">
+			<uni-section title="动车组图片" type="line" style="background-color: transparent;"
+				title-font-size="35rpx"></uni-section>
+			<image mode="scaleToFill" v-for="(nk, index) in picgive" :src="`https://q1.qlogo.cn/g?b=qq&s=100&nk=${nk}`"
+				style="width:90rpx;height:90rpx;border-radius:50%;" class="ux-ml-small ux-r-small"></image>
 		</view>
 		<view class="ux-pl ux-pr">
 			<uni-section title="反馈" type="line" style="background-color: transparent;"
@@ -87,7 +91,8 @@
 		// Railgo Code
 		data() {
 			return {
-				items: []
+				items: [],
+				picgive: ["1972867189", "2151235831", "1069943593", "525637945", "3596323062", "2377807972", "982588465", "1779378782", "516127399", "2533221373", "2387845184", "365736548", "1983163227", "3111737636"]
 			};
 		},
 		mounted() {

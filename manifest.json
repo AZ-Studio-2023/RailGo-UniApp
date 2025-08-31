@@ -2,8 +2,8 @@
     "name" : "RailGo",
     "appid" : "__UNI__1A91000",
     "description" : "一个现代化的专业铁路查询工具",
-    "versionName" : "1.0.1",
-    "versionCode" : 10,
+    "versionName" : "1.0.0 Pre2 Online",
+    "versionCode" : 11,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
@@ -18,7 +18,8 @@
         },
         /* 模块配置 */
         "modules" : {
-            "SQLite" : {}
+            "SQLite" : {},
+            "Geolocation" : {}
         },
         /* 应用发布信息 */
         "distribute" : {
@@ -39,7 +40,9 @@
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
                     "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
                     "<uses-feature android:name=\"android.hardware.camera\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />"
                 ]
             },
             /* ios打包配置 */
@@ -47,7 +50,13 @@
                 "dSYMs" : false
             },
             /* SDK配置 */
-            "sdkConfigs" : {},
+            "sdkConfigs" : {
+                "geolocation" : {
+                    "system" : {
+                        "__platform__" : [ "ios", "android" ]
+                    }
+                }
+            },
             "icons" : {
                 "android" : {
                     "hdpi" : "unpackage/res/icons/72x72.png",

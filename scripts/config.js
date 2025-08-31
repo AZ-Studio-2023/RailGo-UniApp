@@ -23,7 +23,7 @@ export const CAR_PERFORMANCE = {
 	"CRH1A (200)": ["8", "5M3T", "4/5车 有座", "200", "/static/trainHead/CRH1A.png"],
 	"CRH1A (250)": ["8", "5M3T", "4/5车 有座", "250", "/static/trainHead/CRH1A.png"],
 	"CRH1B": ["16", "10M6T", "9车 有座", "250", "/static/trainHead/CRH1B.png"],
-	"CRH1B (1E头型)": ["16", "10M6T", "9车 有座", "250", "/static/trainHead/CRH1E.png"],
+	"CRH1B (1E头型)": ["16", "10M6T", "9车 有座", "250", "/static/trainHead/CRH1B.png"],
 	"CRH1E": ["16", "10M6T", "9车 有座(旧)/无座(统)", "250", "/static/trainHead/CRH1E.png"],
 	"CRH1E-NG": ["16", "10M6T", "9车 无座", "250", "/static/trainHead/CRH1A-A.png"],
 	"CRH1A-A": ["8", "5M3T", "5车 无座", "250", "/static/trainHead/CRH1A-A.png"],

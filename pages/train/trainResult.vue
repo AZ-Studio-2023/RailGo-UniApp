@@ -190,7 +190,7 @@
 							<view class="ux-mt-small">
 								<image v-if="carMap[carData.car.replace(' 重联','')]"
 									:src="carMap[carData.car.replace(' 重联','')][4]" mode="aspectFit"
-									style="max-width:220rpx;height:220rpx;"></image>
+									style="max-width:350rpx; height: 200rpx; border-radius: 30%; overflow: hidden;"></image>
 							</view>
 						</view>
 						<view v-if="['G','D','C'].includes(carData.numberKind)">
