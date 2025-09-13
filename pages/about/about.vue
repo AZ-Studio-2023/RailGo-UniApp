@@ -1,7 +1,11 @@
 <template>
 	<view class="ux-bg-grey5" style="height: 100vh; position: relative;">
-		<!-- headers begin -->
-		<view class="ux-bg-primary" style="height: 50rpx;">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+
+		<uni-popup ref="reset_oobe_dialog" type="dialog">
+			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" content="您确定要销毁设置吗？这将重启程序并跳转到OOBE页面。"
+				@confirm="confirmResetOobe"></uni-popup-dialog>
+		</uni-popup>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -10,7 +14,6 @@
 			<br>
 			<text class="ux-h2">关于</text>
 		</view>
-		<!-- headers end -->
 		<view class="ux-padding">
 			<view class="ux-bg-white ux-border-radius-large ux-padding">
 				<view class="ux-flex ux-align-items-center">
@@ -60,13 +63,16 @@
 								class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
-				<!-- <navigator url="/pages/about/update/db"
-					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-padding ux-mt-small">
+				
+				<view @click="resetOobe"
+					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
-						<text class="ux-text-small">更新</text>
-						<text class="ux-text-small ux-color-grey1"><text class="icon">&#xe5c8;</text></text>
+						<text class="ux-text-left ux-text-small">重置</text>
+						<text class="ux-text-right ux-text-small ux-color-grey1"><text
+								class="icon">&#xe5c8;</text></text>
 					</view>
-				</navigator> -->
+				</view>
+				
 				<navigator v-if="count >= 10" url="/pages/about/egg"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -94,7 +100,9 @@
 			};
 		},
 		onShow() {
+			// #ifdef APP
 			plus.navigator.setStatusBarBackground('#114598');
+			// #endif
 		},
 		methods: {
 			back: function() {
@@ -102,6 +110,15 @@
 			},
 			add: function() {
 				this.count += 1
+			},
+			resetOobe: function() {
+				this.$refs.reset_oobe_dialog.open();
+			},
+			confirmResetOobe: function() {
+				uni.setStorageSync("oobe", false);
+				uni.reLaunch({
+					url: '/pages/oobe/welcome'
+				});
 			}
 		}
 	}

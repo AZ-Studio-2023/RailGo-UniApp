@@ -1,17 +1,14 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<!-- headers begin -->
-		<view class="ux-bg-primary" style="height: 50rpx;">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
 				<text class="icon" style="font-size: 45rpx;">&#xe5c4;</text>
 			</view>
 		</view>
-		<!-- headers end -->
 		<view class="ux-pl ux-pr ux-pb">
 
-			<!-- 车次小卡片 -->
 			<view class="ux-bg-white ux-border-radius">
 				<view class="ux-flex ux-space-between ux-pt ux-pl ux-pr ux-align-items-center">
 					<view>
@@ -281,7 +278,8 @@
 	import {
 		toRaw
 	} from "@vue/reactivity";
-	import uniGet from "@/scripts/req";
+	import uniGet from "@/scripts/req"; // 导入网络请求
+	
 	export default {
 		components: {
 			calendar
@@ -306,6 +304,7 @@
 				"title": '',
 				"date": "",
 				"train": "",
+				"keyword": "",
 				"cardColor": "#114598",
 				"topTabList": [{
 					name: '时刻',
@@ -319,14 +318,18 @@
 		},
 		onLoad(options) {
 			this.train = options.keyword ? options.keyword.split("/")[0] : '';
+			this.keyword = options.keyword;
 			this.title = this.train;
 			this.date = options.date || '';
+
+			const mode = uni.getStorageSync("mode");
+			
 			const c = uni.getStorageSync("search");
 			uni.setStorage({
 				key: 'search',
 				data: c+1
 			});
-			this.fillInData(); // 调用数据填充方法
+			this.fillInData(mode);
 		},
 		onShow() {
 			// #ifdef APP
@@ -337,91 +340,157 @@
 			back: function() {
 				uni.navigateBack()
 			},
-			fillInData: async function() {
+			fillInData: async function(mode) {
 				uni.showLoading({
 				    title: "加载中"
 				});
-			    try {
-			        if (!this.train) return;
-			        const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/query?train=${encodeURIComponent(this.train)}`);
-			        const result = resp.data;
-			        if (result.error) {
-			            // 确保有安全的默认值
-			            this.carData = {
-			                numberKind: '',
-			                numberFull: [],
-			                type: '',
-			                timetable: [],
-			                bureauName: '',
-			                runner: '',
-			                carOwner: '',
-			                car: '',
-			                rundays: [],
-			                diagram: []
-			            };
-			            this.cardColor = '#114598';
+				if (mode == "network") {
+					// --- 网络模式逻辑 ---
+					try {
+						if (!this.train) return;
+						const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/query?train=${encodeURIComponent(this.train)}`);
+						const result = resp.data;
+						if (result.error) {
+							this.carData = {
+								numberKind: '',
+								numberFull: [],
+								type: '',
+								timetable: [],
+								bureauName: '',
+								runner: '',
+								carOwner: '',
+								car: '',
+								rundays: [],
+								diagram: []
+							};
+							this.cardColor = '#114598';
+							uni.hideLoading()
+							uni.showToast({
+								title: '车次不存在',
+								icon: 'error'
+							})
+							const c = uni.getStorageSync("search");
+							uni.setStorage({
+								key: 'search',
+								data: c-1
+							});
+							uni.navigateBack()
+							return;
+						}
+						// 处理字段，确保安全
+						this.carData = {
+							numberKind: result.numberKind || '',
+							numberFull: Array.isArray(result.numberFull) ? result.numberFull : [],
+							type: result.type || '',
+							timetable: (result.timetable || []).map(item => ({
+								station: '',
+								stationTelecode: '',
+								trainCode: '',
+								arrive: '',
+								depart: '',
+								stopTime: '-',
+								distance: '-',
+								speed: 0,
+								day: '-',
+								...item
+							})),
+							bureauName: result.bureauName || '',
+							runner: result.runner || '',
+							carOwner: result.carOwner || '',
+							car: result.car || '',
+							rundays: Array.isArray(result.rundays) ? result.rundays : [],
+							diagram: Array.isArray(result.diagram) ? result.diagram : []
+						};
+						this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
 						uni.hideLoading()
-						uni.showToast({
-							title: '车次不存在',
-							icon: 'error'
-						})
+					} catch (error) {
+						console.error("数据加载失败", error);
+						uni.hideLoading()
 						const c = uni.getStorageSync("search");
 						uni.setStorage({
 							key: 'search',
 							data: c-1
 						});
-						uni.navigateBack()
-			            return;
-			        }
-			        // 处理字段，确保安全
-			        this.carData = {
-			            numberKind: result.numberKind || '',
-			            numberFull: Array.isArray(result.numberFull) ? result.numberFull : [],
-			            type: result.type || '',
-			            timetable: (result.timetable || []).map(item => ({
-			                station: '',
-			                stationTelecode: '',
-			                trainCode: '',
-			                arrive: '',
-			                depart: '',
-			                stopTime: '-',
-			                distance: '-',
-			                speed: 0,
-			                day: '-',
-			                ...item
-			            })),
-			            bureauName: result.bureauName || '',
-			            runner: result.runner || '',
-			            carOwner: result.carOwner || '',
-			            car: result.car || '',
-			            rundays: Array.isArray(result.rundays) ? result.rundays : [],
-			            diagram: Array.isArray(result.diagram) ? result.diagram : []
-			        };
-			        this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
-					uni.hideLoading()
-			    } catch (error) {
-			        console.error("数据加载失败", error);
-					uni.hideLoading()
-					const c = uni.getStorageSync("search");
-					uni.setStorage({
-						key: 'search',
-						data: c-1
-					});
-			        // 确保有安全的默认值
-			        this.carData = {
-			            numberKind: '',
-			            numberFull: [],
-			            type: '',
-			            timetable: [],
-			            bureauName: '',
-			            runner: '',
-			            carOwner: '',
-			            car: '',
-			            rundays: [],
-			            diagram: []
-			        };
-			        this.cardColor = '#114598';
-			    }
+						this.carData = {
+							numberKind: '',
+							numberFull: [],
+							type: '',
+							timetable: [],
+							bureauName: '',
+							runner: '',
+							carOwner: '',
+							car: '',
+							rundays: [],
+							diagram: []
+						};
+						this.cardColor = '#114598';
+					}
+				} else {
+					// --- 本地模式逻辑 ---
+					try {
+						if (!this.keyword) {
+							return;
+						}
+						const result = await doQuery("SELECT * FROM trains WHERE code='" + this.keyword +
+							"'", KEYS_STRUCT_TRAINS);
+						if (result && result.length > 0) {
+							this.carData = {
+								numberKind: '',
+								numberFull: [],
+								type: '',
+								timetable: [],
+								bureauName: '',
+								runner: '',
+								carOwner: '',
+								car: '',
+								rundays: [],
+								diagram: [],
+								...toRaw(result[0])
+							};
+	
+							for (var i = 0; i < this.carData.diagram.length; i++) {
+								let dg = toRaw(await doQuery("SELECT code, numberFull FROM trains WHERE number='" + this
+									.carData.diagram[i].train_num + "'"))[0];
+								if (dg) {
+									this.carData.diagram[i].code = dg.code;
+									this.carData.diagram[i].numberFull = dg.numberFull;
+								}
+							}
+	
+							this.carData.timetable = (this.carData.timetable || []).map(item => ({
+								station: '',
+								stationTelecode: '',
+								trainCode: '',
+								arrive: '',
+								depart: '',
+								stopTime: '-',
+								distance: '-',
+								speed: 0,
+								day: '-',
+								...item
+							}));
+	
+							this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
+						}
+					} catch (error) {
+						console.error("数据加载失败", error);
+						this.carData = {
+							numberKind: '',
+							numberFull: [],
+							type: '',
+							timetable: [],
+							bureauName: '',
+							runner: '',
+							carOwner: '',
+							car: '',
+							rundays: [],
+							diagram: []
+						};
+						this.cardColor = '#114598';
+					} finally {
+						uni.hideLoading();
+					}
+				}
 			},
 			tabChange: function(e) {
 				this.selectIndex = e.index;
@@ -429,3 +498,13 @@
 		}
 	}
 </script>
+
+<style>
+	.page {
+		min-height: 100vh;
+	}
+
+	.status-bar {
+		height: var(--status-bar-height);
+	}
+</style>

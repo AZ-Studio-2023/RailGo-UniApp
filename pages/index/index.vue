@@ -1,5 +1,5 @@
 <template>
-	<view class="ux-bg-primary" style="height: 50rpx;">&nbsp;</view>
+	<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
 	<view class="ux-padding ux-bg-grey5" style="min-height: 100vh;">
 		<view class="ux-flex ux-space-between ux-align-items-center">
 			<view>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</view>
@@ -88,7 +88,7 @@
 				</view>
 			</view><br>
 			<view class="ux-flex ux-rows ux-wrap ux-space-between">		
-				<navigator class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mr-small"
+				<navigator class="ux-th ux-bg-white ux-border-radius-large ux-padding"
 					style="flex:auto;width:1rpx;" hover-class="ux-tap" url="/pages/speed/speed">
 					<text class="icon section-icon ux-color-brown">&#xe55e;</text>
 					<br>

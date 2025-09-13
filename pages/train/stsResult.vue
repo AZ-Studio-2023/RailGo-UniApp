@@ -1,7 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<!-- headers begin -->
-		<view class="ux-bg-primary" style="height: 50rpx;">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -12,7 +11,6 @@
 			<br><br>
 			<text class="ux-text-small ux-opacity-5">共查询到 {{this.showData.length}} 个车次</text>
 		</view>
-		<!-- headers end -->
 		<view class="ux-pl ux-pr ux-pb">
 			<view class="ux-padding-small ux-h6 ux-text-center"
 				style="background-color:#e9eef5;border:1px solid #114598;border-radius:10rpx;color:#114598;">
@@ -229,55 +227,142 @@ import uniGet from "@/scripts/req";
 				uni.navigateBack()
 			},
 			fillInData: async function() {
-			    try {
-			        uni.showLoading({
-			            title: "加载中"
-			        });
-			        const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/sts_query?from=${this.from}&to=${this.to}&date=${this.date}`);
-			        const result = resp.data;
-			        if (result.error) {
-			            uni.hideLoading();
+				const mode = uni.getStorageSync("mode"); 
+				if (mode == "network") {
+					// --- 网络模式逻辑 ---
+					try {
+						uni.showLoading({
+							title: "加载中"
+						});
+						const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/sts_query?from=${this.from}&to=${this.to}&date=${this.date}`);
+						const result = resp.data;
+			
+						if (result.error) {
+							uni.hideLoading();
+							const c = uni.getStorageSync("search");
+							uni.setStorage({
+								key: 'search',
+								data: c - 1
+							});
+							this.$refs.error_noky.open();
+							return;
+						}
+			
+						this.data = result;
+						this.showData = this.data;
+						this.radioSortChange({
+							detail: {
+								value: "departure"
+							}
+						});
+			
+						if (toRaw(this.data).length == 0) {
+							uni.hideLoading();
+							const c = uni.getStorageSync("search");
+							uni.setStorage({
+								key: 'search',
+								data: c - 1
+							});
+							this.$refs.error_nosuch.open();
+							return;
+						}
+						uni.hideLoading();
+			
+					} catch (error) {
+						uni.hideLoading();
+						console.error("数据加载失败", error);
 						const c = uni.getStorageSync("search");
 						uni.setStorage({
 							key: 'search',
-							data: c-1
+							data: c - 1
 						});
-			            this.$refs.error_noky.open();
-			            return;
-			        }
-			        this.data = result;
-			        this.showData = this.data;
-			        this.radioSortChange({
-			            detail: {
-			                value: "departure"
-			            }
-			        });
-			        if (toRaw(this.data).length == 0) {
-			            uni.hideLoading();
-						const c = uni.getStorageSync("search");
-						uni.setStorage({
-							key: 'search',
-							data: c-1
+						uni.showToast({
+							title: "加载失败",
+							duration: 1000
 						});
-						uni.hideLoading()
-			            this.$refs.error_nosuch.open();
-			            return;
-			        }
-					uni.hideLoading()
-			    } catch (error) {
-					uni.hideLoading()
-			        console.error("数据加载失败", error);
-					const c = uni.getStorageSync("search");
-					uni.setStorage({
-						key: 'search',
-						data: c-1
-					});
-			        uni.showToast({
-			            title: "加载失败",
-			            duration: 1000
-			        });
-			    }
+					}
+				} else {
+					// --- 本地模式逻辑 ---
+					try {
+						uni.showLoading({
+							title: "加载中"
+						});
+						let fromStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.from +
+							"'", ["trainList"]))[0];
+						let toStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.to + "'",
+							["trainList"]))[0];
+			
+						if (fromStn.trainList.length == 0 || toStn.trainList.length == 0) {
+							uni.hideLoading();
+							this.$refs.error_noky.open();
+							return;
+						}
+			
+						let d = [];
+						let all = toRaw(await doQuery(
+							"SELECT code, number, numberFull, numberKind, timetable, rundays FROM trains WHERE number IN ('" +
+							fromStn.trainList
+							.filter((i) => {
+								return toStn.trainList.includes(i)
+							}).join("','") + "')", ["code", "number", "numberFull", "numberKind", "timetable",
+								"rundays"
+							]));
+			
+						all.forEach((k) => {
+							let fromPos = -1;
+							let toPos = -1;
+							if (!k.rundays.includes(this.date)) {
+								return;
+							}
+							for (var i = 0; i < k.timetable.length; i++) {
+								if (k.timetable[i].stationTelecode == this.from) {
+									fromPos = i;
+								}
+								if (k.timetable[i].stationTelecode == this.to) {
+									toPos = i;
+									break;
+								}
+							}
+							if (fromPos != -1) {
+								k.fromPos = fromPos;
+								k.toPos = toPos;
+								k.showFlag = true;
+								k.passTime = this.calculateTimeDifference(k.timetable[k.fromPos].depart, k
+									.timetable[k.toPos].arrive, k.timetable[k.toPos].day - k.timetable[k
+										.fromPos].day);
+								this.data.push(k);
+							}
+						}, this);
+			
+						this.showData = this.data;
+						this.radioSortChange({
+							detail: {
+								value: "departure"
+							}
+						});
+			
+						if (toRaw(this.data).length == 0) {
+							uni.hideLoading();
+							this.$refs.error_nosuch.open();
+							return;
+						}
+						uni.hideLoading();
+			
+					} catch (error) {
+						uni.hideLoading();
+						// 注意：plus.nativeUI.alert 仅在 H5+ 或 App 平台可用
+						if (typeof plus !== 'undefined' && plus.nativeUI) {
+							plus.nativeUI.alert(error);
+						}
+						console.error("数据加载失败", error);
+						uni.showToast({
+							title: "加载失败",
+							duration: 1000
+						});
+					}
+				}
 			},
+
 			calculateTimeDifference: function(startTime, endTime, daysLater) {
 				const parseTime = (timeStr) => {
 					const [hours, minutes] = timeStr.split(':').map(Number);

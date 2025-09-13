@@ -1,7 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<!-- headers begin -->
-		<view class="ux-bg-primary" style="height: 50rpx;">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -40,25 +39,22 @@
 
 			</view>
 		</view>
-		<!-- headers end -->
-	</view>
+		</view>
 </template>
 
 <script>
 	import {
-		query
-	} from "@/scripts/jsonDB.js";
-	import {
 		doQuery,
 	} from "@/scripts/sqlite.js";
+	import {
+		toRaw
+	} from "@vue/reactivity";
 	import {
 		KEYS_STRUCT_STATIONS,
 		KEYS_STRUCT_TRAINS
 	} from "@/scripts/config.js";
-	import {
-		toRaw
-	} from "@vue/reactivity";
 	import uniGet from "@/scripts/req";
+
 	export default {
 		data() {
 			return {
@@ -77,7 +73,8 @@
 		},
 		onLoad(options) {
 			this.resultPlace = options.resultPlace;
-			this.fillInData(); // 调用数据填充方法
+			const mode = uni.getStorageSync("mode");
+			this.fillInData(mode);
 		},
 		methods: {
 			back: function() {
@@ -85,15 +82,46 @@
 			},
 			inputData: function(e) {
 				this.keyword = e.detail.value;
-				this.fillInData();
+				const mode = uni.getStorageSync("mode");
+				this.fillInData(mode);
 			},
-			fillInData: async function() {
-			    if (this.keyword == "" || this.keyword == null) {
-			        return;
-			    }
-			    const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/station/preselect?keyword=${encodeURIComponent(this.keyword)}`);
-			    const result = resp.data;
-			    this.stationsList = result;
+			fillInData: async function(mode) {
+				if (this.keyword == "" || this.keyword == null) {
+					this.stationsList = [];
+					return;
+				}
+				if (mode == "network") {
+					try {
+						const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/station/preselect?keyword=${encodeURIComponent(this.keyword)}`);
+						this.stationsList = resp.data;
+					} catch (error) {
+						console.error("网络加载失败", error);
+						uni.showToast({
+							title: '网络加载失败',
+							icon: 'none'
+						});
+					}
+				} else { // 本地模式
+					try {
+						this.stationsList = toRaw(await doQuery(
+							"SELECT name, telecode, pinyin, pinyinTriple, type FROM stations WHERE name LIKE '%" + this
+							.keyword + "%' OR pinyin LIKE '%" + this.keyword + "%'", ["name", "telecode", "pinyin", "pinyinTriple", "type"])).sort((a, b) => {
+							if (a.pinyin < b.pinyin) {
+								return -1;
+							}
+							if (a.pinyin > b.pinyin) {
+								return 1;
+							}
+							return 0;
+						});
+					} catch (error) {
+						console.error("本地加载失败", error);
+						uni.showToast({
+							title: '本地加载失败',
+							icon: 'none'
+						});
+					}
+				}
 			},
 			clickToSelect: function(item, e) {
 				uni.setStorageSync(this.resultPlace, item);
