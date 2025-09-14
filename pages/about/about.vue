@@ -3,7 +3,7 @@
 		<view class="ux-bg-primary" style="height: var(--status-bar-height);">&nbsp;</view>
 
 		<uni-popup ref="reset_oobe_dialog" type="dialog">
-			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" :content="`您确定要销毁设置吗？这将重启程序并跳转到OOBE页面。\n\n请牢记您的鉴权信息:\n ${qq} ${key}`"
+			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" :content="`您确定要销毁设置吗？这将重启程序并跳转到OOBE页面.\n\n请牢记您的鉴权信息:\n ${qq} ${key}`"
 				@confirm="confirmResetOobe"></uni-popup-dialog>
 		</uni-popup>
 
@@ -17,7 +17,7 @@
 		<view class="ux-padding">
 			<view class="ux-bg-white ux-border-radius-large ux-padding">
 				<view class="ux-flex ux-align-items-center">
-					<image class="ux-box-shadow ux-border-radius-large" src="~@/static/logo.png"
+					<image class="ux-box-shadow ux-border-radius-large" :src="logoSrc"
 						style="width: 140rpx; height: 140rpx;"></image><br />
 					<view class="ux-pl">
 						<text class="ux-bold ux-h4">RailGo</text>
@@ -55,6 +55,7 @@
 						<text class="ux-text-small ux-color-grey1"><text class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
+				
 				<navigator url="/pages/about/individuation"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -99,8 +100,16 @@
 				offline: uni.getStorageSync("offlineDataVersionText"),
 				error: uni.getStorageSync("DBerror"),
 				qq: '',
-				key: ''
+				key: '',
+				// 新增 nowIcon 和 logoSrc 数据属性
+				nowIcon: uni.getStorageSync("nowIcon") || 'crh'
 			};
+		},
+		computed: {
+			logoSrc() {
+				// 拼接 logo 的动态路径
+				return `/static/icons/rg-${this.nowIcon}.png`;
+			}
 		},
 		onShow() {
 			// #ifdef APP
@@ -109,6 +118,7 @@
 			
 			this.qq = uni.getStorageSync('qq');
 			this.key = uni.getStorageSync('key');
+			this.nowIcon = uni.getStorageSync("nowIcon") || 'crh';
 		},
 		methods: {
 			back: function() {
@@ -131,5 +141,4 @@
 </script>
 
 <style>
-
 </style>

@@ -1,7 +1,7 @@
 {
   "id": "ima-icons",
   "displayName": "动态切换应用图标、桌面图标、名称(节假日、VIP用户、活动等场景的动态切换)",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ima-icons 是一款动态切换应用图标、名称的UTS插件，可实现节假日(元旦、春节)、VIP用户(vip、svip)、活动(6.18、双11、春节年货)等场景的动态切换应用图标、名称",
   "keywords": [
     "桌面图标",

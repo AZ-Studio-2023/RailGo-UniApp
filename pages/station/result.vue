@@ -264,6 +264,28 @@
 				key: 'search',
 				data: c + 1
 			});
+			
+			const now = new Date();
+			const currentUTC = now.getTime();
+			const utc8Offset = 8 * 60 * 60 * 1000;
+			const currentUTC8 = currentUTC + utc8Offset;
+
+			const startTime = new Date('2025/09/14 00:00:00 GMT+0800').getTime();
+			const endTime = new Date('2025/09/30 23:59:59 GMT+0800').getTime();
+			
+			const isWithinTimeWindow = currentUTC8 >= startTime && currentUTC8 <= endTime;
+
+			if (isWithinTimeWindow) {
+				if (this.keyword === 'DFB') {
+					uni.setStorageSync('dfh', true);
+					console.log("东方红车站已解锁");
+				}
+				if (this.keyword === 'TQT') {
+					uni.setStorageSync('tys', true);
+					console.log("太阳升车站已解锁");
+				}
+			}
+
 			this.fillInData(mode);
 		},
 		methods: {
@@ -344,33 +366,33 @@
 				this.$refs.menu_filter.open();
 			},
 			radioSortChange: function(e) {
-			    this.sortState = e.detail.value;
-			    switch (e.detail.value) {
-			        case "stop":
-			            this.showTrains = this.trains.sort((a, b) => {
-			                const stopTimeA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].stopTime || 0) : 0;
-			                const stopTimeB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].stopTime || 0) : 0;
-			                return parseInt(stopTimeA) - parseInt(stopTimeB);
-			            });
-			            break;
-			        case "departure":
-			            this.showTrains = this.trains.sort((a, b) => {
-			                const departA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].depart || '') : '';
-			                const departB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].depart || '') : '';
-			                return departA.localeCompare(departB);
-			            });
-			            break;
-			        case "arrival":
-			            this.showTrains = this.trains.sort((a, b) => {
-			                const arriveA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].arrive || '') : '';
-			                const arriveB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].arrive || '') : '';
-			                return arriveA.localeCompare(arriveB);
-			            });
-			            break;
-			        default:
-			            console.log("排序值无效");
-			    }
-			    this.$refs.menu_sort.close();
+			    this.sortState = e.detail.value;
+			    switch (e.detail.value) {
+			        case "stop":
+			            this.showTrains = this.trains.sort((a, b) => {
+			                const stopTimeA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].stopTime || 0) : 0;
+			                const stopTimeB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].stopTime || 0) : 0;
+			                return parseInt(stopTimeA) - parseInt(stopTimeB);
+			            });
+			            break;
+			        case "departure":
+			            this.showTrains = this.trains.sort((a, b) => {
+			                const departA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].depart || '') : '';
+			                const departB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].depart || '') : '';
+			                return departA.localeCompare(departB);
+			            });
+			            break;
+			        case "arrival":
+			            this.showTrains = this.trains.sort((a, b) => {
+			                const arriveA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].arrive || '') : '';
+			                const arriveB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].arrive || '') : '';
+			                return arriveA.localeCompare(arriveB);
+			            });
+			            break;
+			        default:
+			            console.log("排序值无效");
+			    }
+			    this.$refs.menu_sort.close();
 			},
 			radioFilterChange: function(e) {
 				this.filterTypeState = e.detail.value.join("");
@@ -403,39 +425,39 @@
 				}
 			},
 			getArriveTime(item) {
-			    if (item.arrive) {
-			        return item.arrive;
-			    }
-			    // Add a check to ensure item.timetable is not undefined
-			    if (item.timetable) {
-			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
-			        return stop ? stop.arrive : '--:--';
-			    }
-			    return '--:--'; // Return a default value if timetable is missing
+			    if (item.arrive) {
+			        return item.arrive;
+			    }
+			    // Add a check to ensure item.timetable is not undefined
+			    if (item.timetable) {
+			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+			        return stop ? stop.arrive : '--:--';
+			    }
+			    return '--:--'; // Return a default value if timetable is missing
 			},
 			
 			getDepartTime(item) {
-			    if (item.depart) {
-			        return item.depart;
-			    }
-			    // Add a check to ensure item.timetable is not undefined
-			    if (item.timetable) {
-			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
-			        return stop ? stop.depart : '--:--';
-			    }
-			    return '--:--'; // Return a default value
+			    if (item.depart) {
+			        return item.depart;
+			    }
+			    // Add a check to ensure item.timetable is not undefined
+			    if (item.timetable) {
+			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+			        return stop ? stop.depart : '--:--';
+			    }
+			    return '--:--'; // Return a default value
 			},
 			
 			getStopTime(item) {
-			    if (item.stopTime) {
-			        return item.stopTime;
-			    }
-			    // Add a check to ensure item.timetable is not undefined
-			    if (item.timetable) {
-			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
-			        return stop ? stop.stopTime : '-';
-			    }
-			    return '-'; // Return a default value
+			    if (item.stopTime) {
+			        return item.stopTime;
+			    }
+			    // Add a check to ensure item.timetable is not undefined
+			    if (item.timetable) {
+			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+			        return stop ? stop.stopTime : '-';
+			    }
+			    return '-'; // Return a default value
 			}
 		}
 	}

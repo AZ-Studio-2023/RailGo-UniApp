@@ -1,6 +1,15 @@
-export type IData = any
-
-export type IReturn = any
+export type IData = String | Number | Array<String> | null | undefined
+/**
+ * 返回的参数
+ * @param success 是否成功
+ * @param message 描述
+ * @param data 数据
+ */
+export type IReturn = {
+	success : Boolean
+	message : String
+	data?: IData
+}
 
 // 切换图标（图标 + 名称）
 export type switchIcons = (aliasName : String) => Promise<IReturn>

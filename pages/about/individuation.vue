@@ -60,6 +60,14 @@
 						{{ nowIcon === 'passion' ? '已使用' : (searchUnlock2 ? '使用' : '未解锁') }}
 					</button>
 				</view>
+
+				<view class="icon-item">
+					<image mode="scaleToFill" src="/static/icons/rg-girl.png" :class="{'grayscale': !girlUnlock}" @click="showGirlHelp"></image>
+					<text class="icon-text">RailGo娘</text>
+					<button class="ux-btn" @click="selectIcon('girl')" :disabled="!girlUnlock || nowIcon === 'girl'">
+						{{ nowIcon === 'girl' ? '已使用' : (girlUnlock ? '使用' : '未解锁') }}
+					</button>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -75,12 +83,15 @@
 		data() {
 			return {
 				items: [],
-				egg: uni.getStorageSync("Funnyegg"), 
-				search: uni.getStorageSync("search"), 
-				nowIcon: uni.getStorageSync("nowIcon"), 
+				egg: uni.getStorageSync("Funnyegg"),
+				search: uni.getStorageSync("search"),
+				nowIcon: uni.getStorageSync("nowIcon"),
 				eggUnlock: false,
 				searchUnlock1: false,
 				searchUnlock2: false,
+				girlUnlock: false,
+				dfh: uni.getStorageSync("dfh"),
+				tys: uni.getStorageSync("tys"),
 			};
 		},
 		mounted() {
@@ -92,17 +103,18 @@
 			},
 			updateUnlockStatus() {
 				this.eggUnlock = this.egg === true;
-				this.searchUnlock1 = this.search >= 50; 
+				this.searchUnlock1 = this.search >= 50;
 				this.searchUnlock2 = this.search >= 100;
+				this.girlUnlock = this.dfh === true && this.tys === true;
 			},
 			selectIcon(iconName) {
-				
+
 				console.log('你选择了图标：' + iconName);
 				uni.setStorage({
 					"key": "nowIcon",
 					"data": iconName
 				});
-				this.nowIcon = iconName; 
+				this.nowIcon = iconName;
 				// #ifdef APP
 				d = switchIcons(iconName);
 				uni.showToast({
@@ -118,6 +130,17 @@
 					showCancel: false,
 					confirmText: '我知道了'
 				});
+			},
+			// 新增RailGo娘的解锁提示弹窗
+			showGirlHelp() {
+				if (!this.girlUnlock) {
+					uni.showModal({
+						title: '提示',
+						content: '2025-09-14 ~ 2025.09.30日\n在车站查询查询东方红、太阳升车站，即可解锁',
+						showCancel: false,
+						confirmText: '我知道了'
+					});
+				}
 			}
 		}
 	};

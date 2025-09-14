@@ -67,5 +67,16 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity-alias>
+		<activity-alias
+			android:name="girl"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/rg_girl"
+			android:targetActivity="io.dcloud.PandoraEntry">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
     </application>
 </manifest>
