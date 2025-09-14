@@ -21,7 +21,7 @@
 						<text class="ux-flex ux-align-items-center ux-flex1">{{item.name}}站</text>
 					</template>
 					<template v-slot:body>
-						<view class="ux-flex ux-align-items-center ux-justify-content-center" style="flex-direction: row; margin-right: 10rpx;">
+						<view class="ux-flex ux-align-items-center ux-justify-content-center" style="flex-direction: row; margin-right: 20rpx;">
 							<text v-for="(tag,i) in item.type" :key="i"
 								class="ux-badge ux-color-white ux-ml-small"
 								:style="'background-color:'+this.badgeFlag[tag]">{{tag}}</text>
