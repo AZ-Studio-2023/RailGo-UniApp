@@ -403,25 +403,39 @@
 				}
 			},
 			getArriveTime(item) {
-				if (item.arrive) {
-					return item.arrive;
-				}
-				const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
-				return stop ? stop.arrive : '--:--';
+			    if (item.arrive) {
+			        return item.arrive;
+			    }
+			    // Add a check to ensure item.timetable is not undefined
+			    if (item.timetable) {
+			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+			        return stop ? stop.arrive : '--:--';
+			    }
+			    return '--:--'; // Return a default value if timetable is missing
 			},
+			
 			getDepartTime(item) {
-				if (item.depart) {
-					return item.depart;
-				}
-				const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
-				return stop ? stop.depart : '--:--';
+			    if (item.depart) {
+			        return item.depart;
+			    }
+			    // Add a check to ensure item.timetable is not undefined
+			    if (item.timetable) {
+			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+			        return stop ? stop.depart : '--:--';
+			    }
+			    return '--:--'; // Return a default value
 			},
+			
 			getStopTime(item) {
-				if (item.stopTime) {
-					return item.stopTime;
-				}
-				const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
-				return stop ? stop.stopTime : '-';
+			    if (item.stopTime) {
+			        return item.stopTime;
+			    }
+			    // Add a check to ensure item.timetable is not undefined
+			    if (item.timetable) {
+			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+			        return stop ? stop.stopTime : '-';
+			    }
+			    return '-'; // Return a default value
 			}
 		}
 	}
