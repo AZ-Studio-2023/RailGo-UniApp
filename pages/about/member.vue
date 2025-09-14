@@ -1,7 +1,7 @@
 <template>
 	<view class="ux-bg-grey5" style="height:100vh;">
 		<!-- headers begin -->
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">

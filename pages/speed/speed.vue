@@ -1,6 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="height:100vh;">
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -61,7 +61,7 @@
 				"latitude": 0,
 				"hemisphere_lat": "未知",
 				"hemisphere_lon": "未知",
-				"isHighAccuracy": false 
+				"isHighAccuracy": false 
 			}
 		},
 		onLoad() {
@@ -77,15 +77,16 @@
 			},
 			toggleAccuracy() {
 				this.isHighAccuracy = !this.isHighAccuracy;
-				this.stopSpeedUpdate(); 
-				this.startSpeedUpdate(); 
+				this.stopSpeedUpdate(); 
+				this.startSpeedUpdate(); 
 				uni.showToast({
 					title: this.isHighAccuracy ? '已切换至高精度模式' : '已切换至普通精度模式',
 					icon: 'none'
 				});
 			},
 			startSpeedUpdate() {
-				const interval = 200;
+				// Changed the interval to a more stable value, e.g., 1000ms (1 second)
+				const interval = 1000; 
 				this.updateInterval = setInterval(() => {
 					this.getLocationSpeed();
 				}, interval);
@@ -99,18 +100,18 @@
 			getLocationSpeed() {
 				uni.getLocation({
 					type: 'wgs84',
-					isHighAccuracy: this.isHighAccuracy, 
+					isHighAccuracy: this.isHighAccuracy, 
 					success: (res) => {
-						if (res.speed !== undefined && res.speed !== null) {
-							this.speed = (res.speed * 3.6).toFixed(2);
-						} else {
-							this.speed = 0;
-						}
+						const currentSpeed = (res.speed * 3.6);
+						
+						if (currentSpeed > 0 || this.speed === 0) {
+							this.speed = currentSpeed.toFixed(2);
+						} 
 
 						this.longitude = res.longitude.toFixed(6);
 						this.latitude = res.latitude.toFixed(6);
 					
-						// 判断半球
+						// 判断半球 (Determine hemisphere)
 						this.hemisphere_lat = res.latitude >= 0 ? '北半球' : '南半球';
 						this.hemisphere_lon = res.longitude >= 0 ? '东半球' : '西半球';
 					},
@@ -122,7 +123,7 @@
 						this.hemisphere_lat = "未知";
 						this.hemisphere_lon = "未知";
 						uni.showToast({
-							title: '获取速度和经纬度失败，请检查定位权限',
+							title: '请开启定位权限',
 							icon: 'error'
 						});
 					}

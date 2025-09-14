@@ -48,7 +48,7 @@
 							color: '#303133',
 							fontWeight: 'bold',
 							transform: 'scale(1.05)'
-				    	}" :inactiveStyle="{
+				    	}" :inactiveStyle="{
 							color: '#606266',
 							transform: 'scale(1)'
 						}" itemStyle="height: 34px;padding-left:30px;padding-right:30px;" class="ux-mt-small"
@@ -342,7 +342,7 @@
 			},
 			fillInData: async function(mode) {
 				uni.showLoading({
-				    title: "加载中"
+				    title: "加载中"
 				});
 				if (mode == "network") {
 					// --- 网络模式逻辑 ---
@@ -431,9 +431,10 @@
 						if (!this.keyword) {
 							return;
 						}
-						const result = await doQuery("SELECT * FROM trains WHERE code='" + this.keyword +
+						const result = await doQuery("SELECT * FROM trains WHERE number='" + this.keyword +
 							"'", KEYS_STRUCT_TRAINS);
 						if (result && result.length > 0) {
+							// 修正：确保 carData 所有字段都有默认值，防止页面报错
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -452,8 +453,8 @@
 								let dg = toRaw(await doQuery("SELECT code, numberFull FROM trains WHERE number='" + this
 									.carData.diagram[i].train_num + "'"))[0];
 								if (dg) {
-									this.carData.diagram[i].code = dg.code;
-									this.carData.diagram[i].numberFull = dg.numberFull;
+									// 修正：合并数据而不是只覆盖
+									Object.assign(this.carData.diagram[i], dg);
 								}
 							}
 	
@@ -471,6 +472,32 @@
 							}));
 	
 							this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
+						} else {
+							// 如果没有查询结果，也需要重置数据并给出提示
+							this.carData = {
+								numberKind: '',
+								numberFull: [],
+								type: '',
+								timetable: [],
+								bureauName: '',
+								runner: '',
+								carOwner: '',
+								car: '',
+								rundays: [],
+								diagram: []
+							};
+							this.cardColor = '#114598';
+							uni.showToast({
+								title: '车次不存在',
+								icon: 'error'
+							})
+							const c = uni.getStorageSync("search");
+							uni.setStorage({
+								key: 'search',
+								data: c-1
+							});
+							uni.navigateBack();
+							return;
 						}
 					} catch (error) {
 						console.error("数据加载失败", error);

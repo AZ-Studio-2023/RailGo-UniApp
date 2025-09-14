@@ -91,11 +91,7 @@
 		        // 加载数据库
 		        this.err = "正在加载数据库...";
 		        await loadDB();
-		        
-		        // 验证数据库是否加载成功
-		        if (!isLoaded) {
-		            throw new Error("数据库加载失败");
-		        }
+
 		
 		        // 设置完成标志并跳转
 		        uni.setStorageSync("oobe", true);

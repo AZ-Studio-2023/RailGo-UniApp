@@ -1,9 +1,9 @@
 <template>
 	<view class="ux-bg-grey5" style="height: 100vh; position: relative;">
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: var(--status-bar-height);">&nbsp;</view>
 
 		<uni-popup ref="reset_oobe_dialog" type="dialog">
-			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" content="您确定要销毁设置吗？这将重启程序并跳转到OOBE页面。"
+			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" :content="`您确定要销毁设置吗？这将重启程序并跳转到OOBE页面。\n\n请牢记您的鉴权信息:\n ${qq} ${key}`"
 				@confirm="confirmResetOobe"></uni-popup-dialog>
 		</uni-popup>
 
@@ -83,8 +83,9 @@
 				</navigator>
 			</view>
 
-			<text class="ux-color-grey2 va"
-				style="text-align: center; position: absolute; bottom: 50rpx; width: 100%; font-size: 23rpx;">赣ICP备2023000786号-2A</text>
+			<view style="position: absolute; bottom: 50rpx; width: 100%; text-align: center;">
+				<text class="ux-color-grey2" style="font-size: 23rpx;">赣ICP备2023000786号-2A</text>
+			</view>
 		</view>
 	</view>
 </template>
@@ -96,13 +97,18 @@
 				count: 0,
 				version: uni.getStorageSync("versionText"),
 				offline: uni.getStorageSync("offlineDataVersionText"),
-				error: uni.getStorageSync("DBerror")
+				error: uni.getStorageSync("DBerror"),
+				qq: '',
+				key: ''
 			};
 		},
 		onShow() {
 			// #ifdef APP
 			plus.navigator.setStatusBarBackground('#114598');
 			// #endif
+			
+			this.qq = uni.getStorageSync('qq');
+			this.key = uni.getStorageSync('key');
 		},
 		methods: {
 			back: function() {

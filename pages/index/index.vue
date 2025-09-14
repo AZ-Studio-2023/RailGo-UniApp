@@ -1,5 +1,5 @@
 <template>
-	<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+	<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 	<view class="ux-padding ux-bg-grey5" style="min-height: 100vh;">
 		<view class="ux-flex ux-space-between ux-align-items-center">
 			<view>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</view>

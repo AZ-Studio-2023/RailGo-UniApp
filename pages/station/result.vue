@@ -1,6 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -344,33 +344,33 @@
 				this.$refs.menu_filter.open();
 			},
 			radioSortChange: function(e) {
-				this.sortState = e.detail.value;
-				switch (e.detail.value) {
-					case "stop":
-						this.showTrains = this.trains.sort((a, b) => {
-							const stopTimeA = a.stopTime || (a.timetable && a.timetable[a.indexStopThere]) ? (a.timetable[a.indexStopThere].stopTime || 0) : 0;
-							const stopTimeB = b.stopTime || (b.timetable && b.timetable[b.indexStopThere]) ? (b.timetable[b.indexStopThere].stopTime || 0) : 0;
-							return parseInt(stopTimeA) - parseInt(stopTimeB);
-						});
-						break;
-					case "departure":
-						this.showTrains = this.trains.sort((a, b) => {
-							const departA = a.depart || (a.timetable && a.timetable[a.indexStopThere]) ? (a.timetable[a.indexStopThere].depart || '') : '';
-							const departB = b.depart || (b.timetable && b.timetable[b.indexStopThere]) ? (b.timetable[b.indexStopThere].depart || '') : '';
-							return departA.localeCompare(departB);
-						});
-						break;
-					case "arrival":
-						this.showTrains = this.trains.sort((a, b) => {
-							const arriveA = a.arrive || (a.timetable && a.timetable[a.indexStopThere]) ? (a.timetable[a.indexStopThere].arrive || '') : '';
-							const arriveB = b.arrive || (b.timetable && b.timetable[b.indexStopThere]) ? (b.timetable[b.indexStopThere].arrive || '') : '';
-							return arriveA.localeCompare(arriveB);
-						});
-						break;
-					default:
-						console.log("排序值无效");
-				}
-				this.$refs.menu_sort.close();
+			    this.sortState = e.detail.value;
+			    switch (e.detail.value) {
+			        case "stop":
+			            this.showTrains = this.trains.sort((a, b) => {
+			                const stopTimeA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].stopTime || 0) : 0;
+			                const stopTimeB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].stopTime || 0) : 0;
+			                return parseInt(stopTimeA) - parseInt(stopTimeB);
+			            });
+			            break;
+			        case "departure":
+			            this.showTrains = this.trains.sort((a, b) => {
+			                const departA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].depart || '') : '';
+			                const departB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].depart || '') : '';
+			                return departA.localeCompare(departB);
+			            });
+			            break;
+			        case "arrival":
+			            this.showTrains = this.trains.sort((a, b) => {
+			                const arriveA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].arrive || '') : '';
+			                const arriveB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].arrive || '') : '';
+			                return arriveA.localeCompare(arriveB);
+			            });
+			            break;
+			        default:
+			            console.log("排序值无效");
+			    }
+			    this.$refs.menu_sort.close();
 			},
 			radioFilterChange: function(e) {
 				this.filterTypeState = e.detail.value.join("");

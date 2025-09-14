@@ -1,7 +1,7 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
 		<!-- headers begin -->
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-pl ux-pr ux-pt">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -192,24 +192,39 @@ import uniGet from "../../scripts/req";
 				}
 			},
 			inputData: function(e) {
-			    this.keyword = e.detail.value;
-			    if (this._debounceTimer) clearTimeout(this._debounceTimer);
-			    if (this.keyword.length >= 2) {
-			        this._debounceTimer = setTimeout(async () => {
-			            try {
-			                const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/preselect?keyword=${encodeURIComponent(this.keyword)}`);
-			                const result = resp.data;
-			                this.placeholderData = result.map(item => ({
-			                    numberFull: typeof item === 'string' ? item.split('/') : [],
-			                    fromStation: item.fromStation || {},
-			                    toStation: item.toStation || {}
-			                }));
-			                this.placeholderCollapsed = false;
-			            } catch (error) {
-			                console.error("预选词加载失败", error);
-			            }
-			        }, 200); // 200ms防抖
-			    }
+				this.keyword = e.detail.value;
+				const mode = uni.getStorageSync("mode");
+				if (this._debounceTimer) clearTimeout(this._debounceTimer);
+				if (this.keyword.length >= 2) {
+					this._debounceTimer = setTimeout(async () => {
+						try {
+							if (mode == "network") {
+								const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/preselect?keyword=${encodeURIComponent(this.keyword)}`);
+								const result = resp.data;
+								this.placeholderData = result.map(item => ({
+									numberFull: typeof item === 'string' ? item.split('/') : [],
+									fromStation: item.fromStation || {},
+									toStation: item.toStation || {}
+								}));
+							} else { // mode == "local"
+								if (this.keyword[0] >= '0' && this.keyword[0] <= '9') {
+									this.placeholderData = toRaw(await doQuery(
+										"SELECT code, numberFull, timetable FROM trains WHERE numberFull LIKE '%\"_" +
+										this.keyword + "%\"%' OR numberFull LIKE '%\"" + this.keyword + "%\"'",
+										["code", "numberFull", "timetable"]));
+								} else {
+									this.placeholderData = toRaw(await doQuery(
+										"SELECT code, numberFull, timetable FROM trains WHERE numberFull LIKE '%" +
+										this.keyword + "%'", ["code", "numberFull", "timetable"]));
+								}
+								this.placeholderData = this.placeholderData.sort((a, b) => parseInt(a.numberFull.join("/").match(/\d+/)[0]) - parseInt(b.numberFull.join("/").match(/\d+/)[0]));
+							}
+							this.placeholderCollapsed = false;
+						} catch (error) {
+							console.error("预选词加载失败", error);
+						}
+					}, 200); // 200ms防抖
+				}
 			},
 			inputDate: function(e) {
 				// replace不用RegExp只会替换一次

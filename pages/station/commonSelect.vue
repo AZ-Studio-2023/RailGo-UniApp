@@ -1,6 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -14,29 +14,27 @@
 					@input="inputData" v-model="keyword" />
 			</view>
 			<view class="ux-border-radius">
-				<uni-list>
-					<uni-list-item v-for="(item,index) in stationsList" :key="index" class="ux-bg-white" clickable
-						@click="clickToSelect(item, $event)">
-						<template v-slot:header>
-							<view class="ux-flex ux-align-items-center" style="flex-direction: row;">
-								<view v-for="(tag,i) in item.type" :key="i">
-									<text class="ux-badge ux-color-white ux-mr-small"
-										:style="'background-color:'+this.badgeFlag[tag]">{{tag}}</text>
-								</view>
-							</view>
-						</template>
-						<template v-slot:body>
-							<text class="ux-flex ux-align-items-center ux-flex1">{{item.name}}站</text>
-						</template>
-						<template v-slot:footer>
-							<view class="ux-flex ux-align-items-center ux-justify-content-end"
-								style="flex-direction: row;">
-								<text class="ux-text-small ux-opacity-5">{{item.pinyinTriple}}/-{{item.telecode}}</text>
-							</view>
-						</template>
-					</uni-list-item>
-				</uni-list>
-
+			<uni-list>
+				<uni-list-item v-for="(item,index) in stationsList" :key="index" class="ux-bg-white" clickable
+					@click="clickToSelect(item, $event)">
+					<template v-slot:header>
+						<text class="ux-flex ux-align-items-center ux-flex1">{{item.name}}站</text>
+					</template>
+					<template v-slot:body>
+						<view class="ux-flex ux-align-items-center ux-justify-content-center" style="flex-direction: row;">
+							<text v-for="(tag,i) in item.type" :key="i"
+								class="ux-badge ux-color-white"
+								:style="'background-color:'+this.badgeFlag[tag]">{{tag}}</text>
+						</view>
+					</template>
+					<template v-slot:footer>
+						<view class="ux-flex ux-align-items-center ux-justify-content-end"
+							style="flex-direction: row;">
+							<text class="ux-text-small ux-opacity-5">{{item.pinyinTriple}}/-{{item.telecode}}</text>
+						</view>
+					</template>
+				</uni-list-item>
+			</uni-list>
 			</view>
 		</view>
 		</view>
