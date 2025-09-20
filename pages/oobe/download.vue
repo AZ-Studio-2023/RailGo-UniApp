@@ -78,8 +78,7 @@
 		        
 		        // 获取数据库信息
 		        this.err = "正在获取数据库信息...";
-		        const infoUrlResponse = await uniGet("https://api.state.railgo.zenglingkun.cn/api/v1/url/info");
-		        const finalInfoResponse = await uniGet(infoUrlResponse.data.url);
+		        const finalInfoResponse = await uniGet("https://api.state.railgo.zenglingkun.cn/api/v1/info");
 		        
 		        if (finalInfoResponse.status === 200) {
 		            uni.setStorageSync("offlineDataVersion", finalInfoResponse.data.latest_db);

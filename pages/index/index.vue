@@ -1,5 +1,5 @@
 <template>
-	<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
+	<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 	<view class="ux-padding ux-bg-grey5" style="min-height: 100vh;">
 		<view class="ux-flex ux-space-between ux-align-items-center">
 			<view>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</view>
@@ -82,8 +82,7 @@
 					<br>
 					<br>
 					<view class="ux-text-right ux-mr-small">
-						<!-- <text class="icon">&#xe5c8;</text>-->
-					</view>
+						</view>
 					<text class="ux-text-small">施工中 请静候佳音</text>
 				</view>
 			</view><br>
@@ -104,14 +103,21 @@
 			</view>
 		</view>
 		<br>
-		<image class="ux-border-radius-large" src="/static/overlay/index_banner_1.png" style="width:100%;"
-			mode="widthFix"></image>
+		<swiper v-if="bannerImages.length > 0" class="ux-border-radius-large" style="width: 100%; height: 210rpx;" indicator-dots circular autoplay>
+			<swiper-item v-for="(url, index) in bannerImages" :key="index">
+				<image :src="url" mode="aspectFill" class="ux-border-radius-large" style="width: 100%; height: 100%;"></image>
+			</swiper-item>
+		</swiper>
+		<image v-else class="ux-border-radius-large" src="/static/overlay/index_banner_1.png" style="width:100%; height: 210rpx;" mode="aspectFill"></image>
 	</view>
 </template>
 
 <script>
-async function check() {
-		if (uni.getStorageSync("jqok")){
+	// 导入本地 JSON 文件
+	import hitokotoData from '@/static/i.json';
+
+	async function check() {
+		if (uni.getStorageSync("jqok")) {
 			return
 		}
 		try {
@@ -173,14 +179,16 @@ async function check() {
 		// Railgo Code
 		data() {
 			return {
-				title: '海内存知己，天涯若比邻。',
+				title: '海内存知己，天涯若比邻。', // 默认值
 				visit: 0,
 				query: 0,
-				items: ['暂无公告']
+				items: ['暂无公告'],
+				bannerImages: [] 
 			};
 		},
 		mounted() {
-			this.fetchData();
+			this.setHitokoto();
+			this.fetchRemoteData();
 		},
 		onShow() {
 			// #ifdef APP
@@ -194,11 +202,22 @@ async function check() {
 			}
 		},
 		methods: {
-			async fetchData() {
-				try {
-					const titleResponse = await uniGet('https://api.state.railgo.zenglingkun.cn/yiyan');
-					this.title = titleResponse.data;
+			setHitokoto() {
+				const maxAttempts = 20;
+				for (let i = 0; i < maxAttempts; i++) {
+					const randomIndex = Math.floor(Math.random() * hitokotoData.length);
+					const hitokoto = hitokotoData[randomIndex].hitokoto;
 
+					if (hitokoto.length <= 18) {
+						this.title = hitokoto;
+						return;
+					}
+				}
+				this.title = '海内存知己，天涯若比邻。';
+			},
+
+			async fetchRemoteData() {
+				try {
 					const statsResponse = await uniGet('https://api.state.railgo.zenglingkun.cn/state');
 					this.visit = statsResponse.data.visits;
 					this.query = statsResponse.data.queries;
@@ -206,13 +225,16 @@ async function check() {
 					const noticeResponse = await uniGet("https://api.state.railgo.zenglingkun.cn/notice");
 					this.items = noticeResponse.data;
 
+					const picResponse = await uniGet("https://api.state.railgo.zenglingkun.cn/pic");
+					this.bannerImages = picResponse.data;
+
 					await uniGet("https://api.state.railgo.zenglingkun.cn/visit");
 				} catch (error) {
-					console.error('Error fetching data:', error);
-					this.title = '海内存知己，天涯若比邻。';
+					console.error('Error fetching remote data:', error);
 					this.visit = 0;
 					this.query = 0;
 					this.items = ['暂无公告'];
+					this.bannerImages = [];
 				}
 			}
 		}
@@ -227,12 +249,6 @@ async function check() {
 	.main {
 		.box {
 			background: #ffffff;
-			//width: 95%;
-			//height: 100px;
-			//margin-top: 10px;
-			//margin-left: 2.5%;
-			//margin-right: 2.5%;
-			//border-radius: 10px;
 			box-sizing: border-box;
 			font-family: "钉钉进步体";
 			overflow: hidden;
