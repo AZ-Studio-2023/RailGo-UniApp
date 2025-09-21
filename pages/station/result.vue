@@ -1,6 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -34,7 +34,7 @@
 							color: '#303133',
 							fontWeight: 'bold',
 							transform: 'scale(1.05)'
-				    	}" :inactiveStyle="{
+				    	}" :inactiveStyle="{
 							color: '#606266',
 							transform: 'scale(1)'
 						}" itemStyle="height: 34px;padding-left:30px;padding-right:30px;" class="ux-mt-small"
@@ -177,7 +177,7 @@
 					</view>
 					<view class="ux-flex ux-space-between">
 						<checkbox color="#114598" value="12345678" class="ux-mr ux-mt-small"
-							:checked="filterTypeState.includes('1')">
+							:checked="filterTypeState.includes('12345678')">
 							<text class="ux-text-small">普客</text>
 						</checkbox>
 						<checkbox color="#114598" value="S" class="ux-mr ux-mt-small"
@@ -251,8 +251,9 @@
 				trains: [],
 				showTrains: [],
 				colorMap: TRAIN_KIND_COLOR_MAP,
-				filterTypeState: "GDCZTK12345678SLY",
-				filterSourceState: "PDA",
+				// 初始状态应该为包含所有选项的数组
+				filterTypeState: ["G", "D", "C", "Z", "T", "K", "12345678", "S", "LY"],
+				filterSourceState: ["P", "D", "A"],
 				sortState: "departure"
 			}
 		},
@@ -349,11 +350,7 @@
 						console.error("本地数据加载失败", error);
 					}
 				}
-				this.radioSortChange({
-					detail: {
-						value: "departure"
-					}
-				});
+				this.applySortingAndFiltering(); // 初始加载时应用一次排序和筛选
 				uni.hideLoading();
 			},
 			tabChange: function(e) {
@@ -365,53 +362,78 @@
 			openFilterMenu: function() {
 				this.$refs.menu_filter.open();
 			},
-			radioSortChange: function(e) {
-			    this.sortState = e.detail.value;
-			    switch (e.detail.value) {
-			        case "stop":
-			            this.showTrains = this.trains.sort((a, b) => {
-			                const stopTimeA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].stopTime || 0) : 0;
-			                const stopTimeB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].stopTime || 0) : 0;
-			                return parseInt(stopTimeA) - parseInt(stopTimeB);
-			            });
-			            break;
-			        case "departure":
-			            this.showTrains = this.trains.sort((a, b) => {
-			                const departA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].depart || '') : '';
-			                const departB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].depart || '') : '';
-			                return departA.localeCompare(departB);
-			            });
-			            break;
-			        case "arrival":
-			            this.showTrains = this.trains.sort((a, b) => {
-			                const arriveA = (a.timetable && a.indexStopThere !== -1) ? (a.timetable[a.indexStopThere].arrive || '') : '';
-			                const arriveB = (b.timetable && b.indexStopThere !== -1) ? (b.timetable[b.indexStopThere].arrive || '') : '';
-			                return arriveA.localeCompare(arriveB);
-			            });
-			            break;
-			        default:
-			            console.log("排序值无效");
-			    }
-			    this.$refs.menu_sort.close();
-			},
-			radioFilterChange: function(e) {
-				this.filterTypeState = e.detail.value.join("");
-				this.showTrains = this.trains.filter((i) => {
-					return this.filterTypeState.includes(i.number.charAt(0));
-				});
-			},
-			radioSourceChange: function(e) {
-				this.filterSourceState = e.detail.value.join("");
-				this.showTrains = this.trains.filter((i) => {
+			
+			// 新增的集中处理排序和筛选的函数
+			applySortingAndFiltering: function() {
+				let filteredTrains = [...this.trains];
+
+				// 1. 先进行筛选
+				filteredTrains = filteredTrains.filter(i => {
+					// 筛选车种
+					const firstChar = i.number.charAt(0);
+					let typeMatch = false;
+					if (firstChar >= '1' && firstChar <= '8') {
+						typeMatch = this.filterTypeState.includes("12345678");
+					} else {
+						// 确保 'LY' 类型的车次能够被筛选
+						typeMatch = this.filterTypeState.includes(firstChar) || this.filterTypeState.includes("LY");
+					}
+					
+					// 筛选到发
 					const fromCode = (i.fromStation && i.fromStation.stationTelecode) || (i.timetable && i.timetable[0] && i.timetable[0].stationTelecode) || '';
 					const toCode = (i.toStation && i.toStation.stationTelecode) || (i.timetable && i.timetable[i.timetable.length - 1] && i.timetable[i.timetable.length - 1].stationTelecode) || '';
-
-					return (
+					
+					const sourceMatch = (
 						(fromCode !== this.keyword && toCode !== this.keyword && this.filterSourceState.includes("P")) ||
 						(fromCode === this.keyword && this.filterSourceState.includes("D")) ||
 						(toCode === this.keyword && this.filterSourceState.includes("A"))
 					);
+					
+					return typeMatch && sourceMatch;
 				});
+
+				// 2. 然后进行排序
+				switch (this.sortState) {
+					case "stop":
+						filteredTrains.sort((a, b) => {
+							const stopTimeA = parseInt(this.getStopTime(a) || '-');
+							const stopTimeB = parseInt(this.getStopTime(b) || '-');
+							return stopTimeA - stopTimeB;
+						});
+						break;
+					case "departure":
+						filteredTrains.sort((a, b) => {
+							const departA = this.getDepartTime(a) || '23:59';
+							const departB = this.getDepartTime(b) || '23:59';
+							return departA.localeCompare(departB);
+						});
+						break;
+					case "arrival":
+						filteredTrains.sort((a, b) => {
+							const arriveA = this.getArriveTime(a) || '23:59';
+							const arriveB = this.getArriveTime(b) || '23:59';
+							return arriveA.localeCompare(arriveB);
+						});
+						break;
+				}
+
+				// 3. 最后更新展示列表
+				this.showTrains = filteredTrains;
+			},
+			
+			// 修复了这三个方法，确保状态正确更新为数组，并调用 applySortingAndFiltering
+			radioSortChange: function(e) {
+			    this.sortState = e.detail.value;
+			    this.applySortingAndFiltering();
+			    this.$refs.menu_sort.close();
+			},
+			radioFilterChange: function(e) {
+				this.filterTypeState = e.detail.value;
+			    this.applySortingAndFiltering();
+			},
+			radioSourceChange: function(e) {
+				this.filterSourceState = e.detail.value;
+			    this.applySortingAndFiltering();
 			},
 			getToday: function() {
 				const date = new Date();
@@ -428,36 +450,33 @@
 			    if (item.arrive) {
 			        return item.arrive;
 			    }
-			    // Add a check to ensure item.timetable is not undefined
 			    if (item.timetable) {
 			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
 			        return stop ? stop.arrive : '--:--';
 			    }
-			    return '--:--'; // Return a default value if timetable is missing
+			    return '--:--';
 			},
 			
 			getDepartTime(item) {
 			    if (item.depart) {
 			        return item.depart;
 			    }
-			    // Add a check to ensure item.timetable is not undefined
 			    if (item.timetable) {
 			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
 			        return stop ? stop.depart : '--:--';
 			    }
-			    return '--:--'; // Return a default value
+			    return '--:--';
 			},
 			
 			getStopTime(item) {
 			    if (item.stopTime) {
 			        return item.stopTime;
 			    }
-			    // Add a check to ensure item.timetable is not undefined
 			    if (item.timetable) {
 			        const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
 			        return stop ? stop.stopTime : '-';
 			    }
-			    return '-'; // Return a default value
+			    return '-';
 			}
 		}
 	}
