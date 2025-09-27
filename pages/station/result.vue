@@ -96,7 +96,6 @@
 												<text class="ux-text-small ux-opacity-5">停车</text>
 											</view>
 										</view>
-
 									</view>
 								</view>
 								<text class="ux-text"><text class="icon">&#xe5c8;</text></text>
@@ -185,7 +184,7 @@
 							<text class="ux-text-small">市域</text>
 						</checkbox>
 						<checkbox color="#114598" value="LY" class="ux-mr ux-mt-small"
-							:checked="filterTypeState.includes('L')">
+							:checked="filterTypeState.includes('LY')">
 							<text class="ux-text-small">其他</text>
 						</checkbox>
 					</view>
@@ -251,7 +250,6 @@
 				trains: [],
 				showTrains: [],
 				colorMap: TRAIN_KIND_COLOR_MAP,
-				// 初始状态应该为包含所有选项的数组
 				filterTypeState: ["G", "D", "C", "Z", "T", "K", "12345678", "S", "LY"],
 				filterSourceState: ["P", "D", "A"],
 				sortState: "departure"
@@ -313,7 +311,9 @@
 								data: c - 1
 							});
 							uni.hideLoading();
-							uni.navigateBack();
+							uni.redirectTo({
+								url: '/pages/404/404'
+							});
 							return;
 						}
 						this.data = result.data || {};
@@ -332,17 +332,30 @@
 					try {
 						this.data = toRaw((await doQuery("SELECT * FROM stations WHERE telecode='" + this.keyword + "'", KEYS_STRUCT_STATIONS))[0]);
 						if (this.data.trainList && this.data.trainList.length > 0) {
-							this.trains = toRaw(await doQuery(
+							// 获取所有列车数据
+							const rawTrains = await doQuery(
 								"SELECT code, number, numberFull, numberKind, timetable FROM trains WHERE number IN ('" +
 								this.data.trainList.join("','") + "')", ["code", "number", "numberFull", "numberKind",
 									"timetable"
-								]));
-							this.trains.forEach((item, index) => {
-								item.indexStopThere = item.timetable.findIndex((tt) => {
-									return tt.stationTelecode == this.keyword;
-								});
-								this.trains[index] = item;
+								]);
+							
+							// 遍历并处理每个列车对象，添加 arrive, depart, stopTime
+							this.trains = rawTrains.map(item => {
+								const stop = item.timetable.find(tt => tt.stationTelecode === this.keyword);
+								if (stop) {
+									return {
+										...item,
+										arrive: stop.arrive,
+										depart: stop.depart,
+										stopTime: stop.stopTime,
+										fromStation: item.timetable[0],
+										toStation: item.timetable[item.timetable.length - 1],
+										indexStopThere: item.timetable.findIndex(tt => tt.stationTelecode === this.keyword)
+									};
+								}
+								return item; // 如果没有找到匹配的站点，返回原始对象
 							});
+
 						} else {
 							this.trains = [];
 						}
@@ -374,9 +387,10 @@
 					let typeMatch = false;
 					if (firstChar >= '1' && firstChar <= '8') {
 						typeMatch = this.filterTypeState.includes("12345678");
+					} else if (firstChar === 'L' || firstChar === 'Y') {
+						typeMatch = this.filterTypeState.includes("LY");
 					} else {
-						// 确保 'LY' 类型的车次能够被筛选
-						typeMatch = this.filterTypeState.includes(firstChar) || this.filterTypeState.includes("LY");
+						typeMatch = this.filterTypeState.includes(firstChar);
 					}
 					
 					// 筛选到发
@@ -396,22 +410,22 @@
 				switch (this.sortState) {
 					case "stop":
 						filteredTrains.sort((a, b) => {
-							const stopTimeA = parseInt(this.getStopTime(a) || '-');
-							const stopTimeB = parseInt(this.getStopTime(b) || '-');
+							const stopTimeA = parseInt(this.getStopTime(a) || '0');
+							const stopTimeB = parseInt(this.getStopTime(b) || '0');
 							return stopTimeA - stopTimeB;
 						});
 						break;
 					case "departure":
 						filteredTrains.sort((a, b) => {
-							const departA = this.getDepartTime(a) || '23:59';
-							const departB = this.getDepartTime(b) || '23:59';
+							const departA = this.getDepartTime(a) || '24:00';
+							const departB = this.getDepartTime(b) || '24:00';
 							return departA.localeCompare(departB);
 						});
 						break;
 					case "arrival":
 						filteredTrains.sort((a, b) => {
-							const arriveA = this.getArriveTime(a) || '23:59';
-							const arriveB = this.getArriveTime(b) || '23:59';
+							const arriveA = this.getArriveTime(a) || '24:00';
+							const arriveB = this.getArriveTime(b) || '24:00';
 							return arriveA.localeCompare(arriveB);
 						});
 						break;

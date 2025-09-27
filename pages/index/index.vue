@@ -103,12 +103,12 @@
 			</view>
 		</view>
 		<br>
-		<swiper v-if="bannerImages.length > 0" class="ux-border-radius-large" style="width: 100%; height: 210rpx;" indicator-dots circular autoplay>
+		<swiper v-if="bannerImages.length > 0" class="ux-border-radius-large" :style="{height: swiperHeight}" indicator-dots circular autoplay>
 			<swiper-item v-for="(url, index) in bannerImages" :key="index">
-				<image :src="url" mode="aspectFill" class="ux-border-radius-large" style="width: 100%; height: 100%;"></image>
+				<image :src="url" mode="widthFix" class="ux-border-radius-large" style="width: 100%;" @load="onImageLoad"></image>
 			</swiper-item>
 		</swiper>
-		<image v-else class="ux-border-radius-large" src="/static/overlay/index_banner_1.png" style="width:100%; height: 210rpx;" mode="aspectFill"></image>
+		<image v-else class="ux-border-radius-large" src="/static/overlay/index_banner_1.png" style="width:100%;" mode="widthFix"></image>
 	</view>
 </template>
 
@@ -183,7 +183,8 @@
 				visit: 0,
 				query: 0,
 				items: ['暂无公告'],
-				bannerImages: [] 
+				bannerImages: [],
+				swiperHeight: '210rpx' // Initialize with a default height
 			};
 		},
 		mounted() {
@@ -235,6 +236,18 @@
 					this.query = 0;
 					this.items = ['暂无公告'];
 					this.bannerImages = [];
+				}
+			},
+			onImageLoad(e) {
+				// We only need to set the height once for the first image
+				if (this.swiperHeight === '210rpx' && this.bannerImages.length > 0) {
+					const {
+						width,
+						height
+					} = e.detail;
+					const screenWidth = uni.getSystemInfoSync().windowWidth;
+					const newHeight = (screenWidth * height) / width;
+					this.swiperHeight = `${newHeight}px`;
 				}
 			}
 		}

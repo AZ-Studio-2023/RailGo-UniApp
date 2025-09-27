@@ -3,7 +3,7 @@
 		<view class="ux-bg-primary" style="height: var(--status-bar-height);">&nbsp;</view>
 
 		<uni-popup ref="reset_oobe_dialog" type="dialog">
-			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" :content="`您确定要销毁设置吗？这将重启程序并跳转到OOBE页面.\n\n请牢记您的鉴权信息:\n ${qq} ${key}`"
+			<uni-popup-dialog cancelText="取消" confirmText="确定" title="提示" :content="`您确定要销毁设置吗？这将重启程序并跳转到OOBE页面.`"
 				@confirm="confirmResetOobe"></uni-popup-dialog>
 		</uni-popup>
 

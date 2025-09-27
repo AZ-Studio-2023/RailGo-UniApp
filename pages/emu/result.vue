@@ -87,7 +87,6 @@
 			        // 安全获取keyword，默认为空字符串
 			        const keyword = this.keyword || "";
 			        
-			        // 使用三元运算符确定t的值
 			        const t = keyword.includes("CR") ? "emu" : "train";
 			        
 			        // 确保URL有效

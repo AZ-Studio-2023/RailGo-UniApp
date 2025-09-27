@@ -1,7 +1,7 @@
 <script>
-	const nauth = true;
-	const version = "1.0.0 Pre 3"
-	const version_number = 3
+	const nauth = false;
+	const version = "1.0.0"
+	const version_number = 4
 	import uniGet from "./scripts/req";
 	// UXUI INIT
 	import {

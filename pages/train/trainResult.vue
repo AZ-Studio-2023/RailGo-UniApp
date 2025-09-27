@@ -1,6 +1,6 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<view class="ux-bg-primary" style="height: height: var(--status-bar-height);">&nbsp;</view>
+		<view class="ux-bg-primary" style="height: var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-padding">
 			<view hover-class="ux-bg-grey8" @click="back">
@@ -374,7 +374,9 @@
 								key: 'search',
 								data: c-1
 							});
-							uni.navigateBack()
+							uni.redirectTo({
+								url: '/pages/404/404'
+							})
 							return;
 						}
 						// 处理字段，确保安全
