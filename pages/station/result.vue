@@ -410,23 +410,38 @@
 				switch (this.sortState) {
 					case "stop":
 						filteredTrains.sort((a, b) => {
-							const stopTimeA = parseInt(this.getStopTime(a) || '0');
-							const stopTimeB = parseInt(this.getStopTime(b) || '0');
+							const stopStrA = this.getStopTime(a);
+							const stopStrB = this.getStopTime(b);
+							
+							// 将 '-' 视为最大值 (Infinity)，确保无停车时长的排在最后
+							const stopTimeA = stopStrA === '-' ? Infinity : parseInt(stopStrA) || 0;
+							const stopTimeB = stopStrB === '-' ? Infinity : parseInt(stopStrB) || 0;
+							
 							return stopTimeA - stopTimeB;
 						});
 						break;
 					case "departure":
 						filteredTrains.sort((a, b) => {
-							const departA = this.getDepartTime(a) || '24:00';
-							const departB = this.getDepartTime(b) || '24:00';
-							return departA.localeCompare(departB);
+							const departA = this.getDepartTime(a);
+							const departB = this.getDepartTime(b);
+
+							// 将 '--:--' 视为最大值 '99:99'，确保无出发时间的排在最后
+							const timeA = departA === '--:--' ? '99:99' : departA;
+							const timeB = departB === '--:--' ? '99:99' : departB;
+							
+							return timeA.localeCompare(timeB);
 						});
 						break;
 					case "arrival":
 						filteredTrains.sort((a, b) => {
-							const arriveA = this.getArriveTime(a) || '24:00';
-							const arriveB = this.getArriveTime(b) || '24:00';
-							return arriveA.localeCompare(arriveB);
+							const arriveA = this.getArriveTime(a);
+							const arriveB = this.getArriveTime(b);
+							
+							// 将 '--:--' 视为最大值 '99:99'，确保无到达时间的排在最后
+							const timeA = arriveA === '--:--' ? '99:99' : arriveA;
+							const timeB = arriveB === '--:--' ? '99:99' : arriveB;
+							
+							return timeA.localeCompare(timeB);
 						});
 						break;
 				}
@@ -443,7 +458,7 @@
 			},
 			radioFilterChange: function(e) {
 				this.filterTypeState = e.detail.value;
-			    this.applySortingAndFiltering();
+			    this.applySortingAndFiltering();
 			},
 			radioSourceChange: function(e) {
 				this.filterSourceState = e.detail.value;

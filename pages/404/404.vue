@@ -12,7 +12,7 @@
 		</view>
 		
 		<view class="ux-padding content-area">
-			<view class="ux-text-center">
+			<view class="ux-text-center"><br><br>
 				<text class="ux-h0 ux-text-primary">404</text>
 				<br>
 				<text class="ux-h4 ux-text-dark ux-bold">很抱歉，你来到了没有轨道的荒原...</text>
@@ -29,8 +29,8 @@
 				</view>
 			</view>
 			
-			<br><br>
-			<view class="video-placeholder"></view>
+			<!-- <br><br> -->
+			<!-- <view class="video-placeholder"></view> -->
 			<br>
 
 			<button type="primary" style="background-color:#114598;color:#ffffff;" hover-class="ux-tap" 
@@ -38,7 +38,7 @@
 			<br><br>
 		</view>
 		
-		<web-view v-if="randomVideoUrl" :src="randomVideoUrl" class="video-webview" :style="videoStyle"></web-view>
+<!-- 		<web-view v-if="randomVideoUrl" :src="randomVideoUrl" class="video-webview" :style="videoStyle"></web-view> -->
 	</view>
 </template>
 

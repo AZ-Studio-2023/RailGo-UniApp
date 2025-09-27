@@ -498,7 +498,9 @@
 								key: 'search',
 								data: c-1
 							});
-							uni.navigateBack();
+							uni.redirectTo({
+								url: '/pages/404/404'
+							})
 							return;
 						}
 					} catch (error) {
