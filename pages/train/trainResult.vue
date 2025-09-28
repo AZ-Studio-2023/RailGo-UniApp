@@ -126,15 +126,18 @@
 							<br>
 							{{calculateActualTime(item.departureTime, item.delayMinutes, item.status)}}
 						</uni-td>
-						<uni-td style="border:none" align="center">{{item.stopMinutes || ''}}</uni-td>
+						<uni-td style="border:none" align="center">{{item.stopMinutes || ''}}'</uni-td>
 						<uni-td style="border:none" align="center">{{item.arrivalDate || ''}}</uni-td>
 						<uni-td style="border:none" align="center" :style="getDelayStatusColor(item.delayMinutes, item.status)">
 							{{formatDelayStatus(item.delayMinutes, item.status)}}
 						</uni-td>
 					</uni-tr>
 					<uni-tr v-if="delay.length === 0" style="border:none">
-						<uni-td style="border:none" colspan="7" align="center">
+						<uni-td style="border:none" colspan="7" align="center"  v-if="isOnlyOfflineMode == false">
 							暂无正晚点信息或加载失败
+						</uni-td>
+						<uni-td style="border:none" colspan="7" align="center" class="ux-color-gray" v-if="isOnlyOfflineMode">
+							仅离线模式下无法使用该功能
 						</uni-td>
 					</uni-tr>
 				</uni-table>
@@ -211,7 +214,7 @@
 							<view class="ux-mt-small">
 								<image v-if="carMap[carData.car.replace(' 重联','')]"
 									:src="carMap[carData.car.replace(' 重联','')][4]" mode="aspectFit"
-									style="max-width:350rpx; height: 200rpx; border-radius: 30%; overflow: hidden;"></image>
+									style="max-width:350rpx; height: 200rpx;overflow: hidden; border-radius: 500rpx;"></image>
 							</view>
 						</view>
 						<view v-if="['G','D','C'].includes(carData.numberKind)">
@@ -341,7 +344,8 @@
 				}, {
 					name: '路径'
 				}],
-				"selectIndex": 0
+				"selectIndex": 0,
+				"isOnlyOfflineMode": false // 新增：用于存储 ol 状态
 			}
 		},
 		onLoad(options) {
@@ -351,6 +355,8 @@
 			this.date = options.date || '';
 
 			const mode = uni.getStorageSync("mode");
+			// 新增：检查 'ol' 状态
+			this.isOnlyOfflineMode = uni.getStorageSync("ol") === true;
 
 			const c = uni.getStorageSync("search");
 			uni.setStorage({
@@ -429,24 +435,24 @@
 				if (delayMinutes === null || status === null || delayMinutes === undefined || status === undefined) {
 					return '-';
 				}
-				
+
 				// 2. 如果 status 为 1 且 delayMinutes 为 0，则为 "正点"
 				if (status === 1 && delayMinutes === 0) {
 					return '正点';
 				}
-				
+
 				// 3. 如果 status 为 3 且 delayMinutes 为负数，则为 "早点{|delayMinutes|}分" (绿色)
 				if (status === 3 && delayMinutes < 0) {
 					return `早点${Math.abs(delayMinutes)}分`;
 				}
-				
+
 				// 4. 如果 status 为 2 且 delayMinutes 为正数，则为 "晚点{|delayMinutes|}分" (红色)
 				if (status === 2 && delayMinutes > 0) {
 					return `晚点${delayMinutes}分`;
 				}
-				
+
 				// Fallback
-				return '-'; 
+				return '-';
 			},
 
 			/**
@@ -465,14 +471,14 @@
 					return 'color: #c0392b; font-weight: bold;';
 				}
 				// 默认（正点或未知）：无特定颜色
-				return ''; 
+				return '';
 			},
 
 			/**
 			 * 根据状态返回徽章文本和类型
 			 * @param {number|null} delayMinutes 晚点分钟数
 			 * @param {number|null} status 状态码
-			 * @returns {object} {text: string, type: string} 
+			 * @returns {object} {text: string, type: string}
 			 */
 			getDelayBadgeText: function(delayMinutes, status) {
 				// 晚点
@@ -497,6 +503,29 @@
 			},
 
 			fillInData: async function(mode) {
+				// --- MODIFICATION START ---
+				// 如果处于完全离线模式 (ol == true)，则不获取时刻表/正晚点数据，直接返回
+				if (this.isOnlyOfflineMode) {
+					this.carData = {
+						numberKind: '',
+						numberFull: [],
+						type: '',
+						timetable: [],
+						bureauName: '',
+						runner: '',
+						carOwner: '',
+						car: '',
+						rundays: [],
+						diagram: []
+					};
+					this.cardColor = '#114598';
+					this.delay = [];
+					uni.hideLoading(); // 确保隐藏加载提示
+					console.log("Full offline mode is active, skipping data fetch.");
+					return; // 提前结束函数
+				}
+				// --- MODIFICATION END ---
+				
 				uni.showLoading({
 					title: "加载中"
 				});
@@ -506,14 +535,12 @@
 					if (!this.train) return;
 
 					if (mode == "network") {
-						// --- 网络模式逻辑：获取车次详情 ---
 						const resp = await uniGet(
 							`https://data.railgo.zenglingkun.cn/api/train/query?train=${encodeURIComponent(this.train)}`
 						);
 						const result = resp.data;
 
 						if (result.error || !result.timetable || result.timetable.length === 0) {
-							// 失败处理：网络模式找不到数据
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -590,7 +617,6 @@
 								diagram: [],
 								...toRaw(result[0])
 							};
-							// 处理 diagram 和 timetable
 							for (var i = 0; i < this.carData.diagram.length; i++) {
 								let dg = toRaw(await doQuery("SELECT code, numberFull FROM trains WHERE number='" + this
 									.carData.diagram[i].train_num + "'"))[0];
@@ -611,10 +637,9 @@
 								...item
 							}));
 							this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
-							loadSuccess = true; // 标记成功
+							loadSuccess = true; 
 
 						} else {
-							// 失败处理：本地模式找不到数据
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -640,11 +665,10 @@
 							uni.redirectTo({
 								url: '/pages/404/404'
 							})
-							return; // 结束执行
+							return; 
 						}
 					}
 
-					// --- 统一逻辑：如果 carData 成功加载，则尝试获取正晚点信息（始终使用网络请求） ---
 					if (loadSuccess && this.carData.timetable.length > 0) {
 						const timetable = this.carData.timetable;
 						const fromStation = timetable[0].station;
@@ -660,23 +684,20 @@
 										toStationName: toStation
 									}
 								);
-								// 检查响应数据是否包含有效的 delay 信息
 								if (delayResp.data && Array.isArray(delayResp.data.data)) {
 									this.delay = delayResp.data.data;
 								} else {
 									this.delay = [];
 								}
 							} catch (delayError) {
-								// 即使请求失败，也不影响车次详情页的显示
 								console.warn("获取正晚点信息失败（网络可能断开或接口错误）", delayError);
-								this.delay = []; // 正晚点请求失败，清空数据
+								this.delay = []; 
 							}
 						}
 					}
 					// -------------------------------------------------------------------------
 
 				} catch (error) {
-					// 统一处理加载失败时的清理工作
 					console.error("数据加载失败", error);
 					this.carData = {
 						numberKind: '',

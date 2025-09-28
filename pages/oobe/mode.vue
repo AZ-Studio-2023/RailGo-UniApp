@@ -30,6 +30,9 @@
 				<view class="ux-border-radius ux-bg-white ux-padding" v-if="this.checked=='local'">
 					优先通过本地数据库进行查询。速度最快，没网也能用，但是信息可能滞后。
 				</view>
+				<view class="ux-border-radius ux-bg-white ux-padding" v-if="this.checked=='ol'">
+					仅通过本地数据库查询，无法使用在线功能。例如担当查询，正晚点信息等。
+				</view>
 			</view>
 			<br>
 			<br>
@@ -56,6 +59,10 @@
 					{
 						text: "优先离线",
 						value: "local"
+					},
+					{
+						text: "仅离线",
+						value: "ol"
 					}
 				],
 				"checked": "network",
@@ -67,7 +74,11 @@
 				// 将本地数据库模式与网络请求合并，不再弹出错误提示
 				uni.setStorageSync("mode", this.checked)
 				uni.setStorageSync("oobe", true)
-				if (this.checked == "local") {
+				if (this.checked == "local" || this.checked == "ol") {
+					if (this.checked == "ol"){
+						uni.setStorageSync("mode", "local")
+						uni.setStorageSync("ol", true)
+					}
 					// #ifdef APP
 					uni.getNetworkType({
 						success: (res) => { // <--- 这里改为箭头函数

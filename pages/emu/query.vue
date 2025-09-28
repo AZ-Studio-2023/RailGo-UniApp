@@ -60,6 +60,13 @@
 					});
 					return;
 				}
+				if (uni.getStorageSync("ol")) {
+					uni.showToast({
+						icon: "none",
+						title: "仅离线模式无法使用该功能"
+					});
+					return;
+				}
 				uni.navigateTo({
 					url: "/pages/emu/result?keyword=" + this.keyword + "&future=" + this.future
 				});

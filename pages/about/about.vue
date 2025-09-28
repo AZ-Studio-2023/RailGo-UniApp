@@ -27,7 +27,6 @@
 				</view>
 				<uv-divider></uv-divider>
 				<text style="font-size: 12px; color: grey;">离线数据版本 {{offline}}</text><br>
-				<text style="font-size: 12px; color: grey;">QQ交流群 652032716&nbsp;&nbsp;&nbsp;&nbsp;以MIT协议开放源代码</text><br>
 				<text style="font-size: 12px; color: red;">{{error}}</text>
 			</view>
 
@@ -65,14 +64,6 @@
 								class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
-				<navigator url="/pages/update/db"
-					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
-					<view class="ux-flex ux-space-between">
-						<text class="ux-text-left ux-text-small">离线数据库更新</text>
-						<text class="ux-text-right ux-text-small ux-color-grey1"><text
-								class="icon">&#xe5c8;</text></text>
-					</view>
-				</navigator>
 				<view @click="resetOobe"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -88,8 +79,14 @@
 						<text class="ux-text-small ux-color-grey1"><text class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
-				
-				
+				<navigator url="/pages/update/db"
+					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
+					<view class="ux-flex ux-space-between">
+						<text class="ux-text-left ux-text-small">更新</text>
+						<text class="ux-text-right ux-text-small ux-color-grey1"><text
+								class="icon">&#xe5c8;</text></text>
+					</view>
+				</navigator>
 				<navigator v-if="count >= 10" url="/pages/about/egg"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -100,7 +97,7 @@
 				</navigator>
 			</view>
 
-			<view style="position: absolute; bottom: 50rpx; width: 100%; text-align: center;">
+			<view style="margin-top: 50rpx; text-align: center;">
 				<text class="ux-color-grey2" style="font-size: 23rpx;">赣ICP备2023000786号-2A</text>
 			</view>
 		</view>
