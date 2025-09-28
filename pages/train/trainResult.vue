@@ -57,7 +57,7 @@
 
 			<view v-if="selectIndex==0">
 				<uni-section title="时刻表" type="line" style="background-color: transparent;"
-					title-font-size="25rpx"></uni-section>
+					title-font-size="28rpx"></uni-section>
 				<uni-table style="border:none">
 					<uni-tr style="border:none">
 						<uni-th style="border:none" width="10">
@@ -96,25 +96,44 @@
 				</uni-table>
 
 				<uni-section title="正晚点" type="line" style="background-color: transparent;"
-					title-font-size="25rpx"></uni-section>
-				<uni-table border stripe>
-					<uni-tr>
-						<uni-th align="center">车站</uni-th>
-						<uni-th align="center">车次</uni-th>
-						<uni-th align="center">预计到达时间<br>预计发车时间</uni-th>
-						<uni-th align="center">停站时间</uni-th>
-						<uni-th align="center">日期</uni-th>
-						<uni-th align="center">状态</uni-th>
+					title-font-size="28rpx"></uni-section>
+				<uni-table style="border:none">
+					<uni-tr style="border:none">
+						<uni-th style="border:none" align="center">车站</uni-th>
+						<uni-th style="border:none" align="center">车次</uni-th>
+						<uni-th style="border:none" align="center">预计到达时间<br>预计发车时间</uni-th>
+						<uni-th style="border:none" align="center">实际到达时间<br>实际发车时间</uni-th>
+						<uni-th style="border:none" align="center">停站时间</uni-th>
+						<uni-th style="border:none" align="center">日期</uni-th>
+						<uni-th style="border:none" align="center">状态</uni-th>
 					</uni-tr>
-					<uni-tr v-for="(item,index) in delay" :key="index">
-						<uni-td>{{item.stationName || ''}}</uni-td>
-						<uni-td>{{item.trainNumber || ''}}</uni-td>
-						<uni-td>{{item.arrivalTime || ''}}<br>{{item.departureTime || ''}}</uni-td>
-						<uni-td>{{item.arrivalDate || ''}}</uni-td>
-						<uni-td>{{item.status || ''}}</uni-td>
+					<uni-tr v-for="(item,index) in delay" :key="index" style="border:none" hover-class="ux-bg-grey5">
+						<uni-td style="border:none" align="center">
+							<view class="ux-flex ux-align-items-center ux-justify-content-center">
+								<text>{{item.stationName || ''}}</text>
+								<uni-badge v-if="getDelayBadgeText(item.delayMinutes, item.status).text"
+									:text="getDelayBadgeText(item.delayMinutes, item.status).text"
+									:type="getDelayBadgeText(item.delayMinutes, item.status).type"
+									size="small"
+									style="margin-left: 5px;"
+								></uni-badge>
+							</view>
+						</uni-td>
+						<uni-td style="border:none" align="center">{{item.trainNumber || ''}}</uni-td>
+						<uni-td style="border:none" align="center">{{item.arrivalTime || '-'}}<br>{{item.departureTime || '-'}}</uni-td>
+						<uni-td style="border:none" align="center">
+							{{calculateActualTime(item.arrivalTime, item.delayMinutes, item.status)}}
+							<br>
+							{{calculateActualTime(item.departureTime, item.delayMinutes, item.status)}}
+						</uni-td>
+						<uni-td style="border:none" align="center">{{item.stopMinutes || ''}}</uni-td>
+						<uni-td style="border:none" align="center">{{item.arrivalDate || ''}}</uni-td>
+						<uni-td style="border:none" align="center" :style="getDelayStatusColor(item.delayMinutes, item.status)">
+							{{formatDelayStatus(item.delayMinutes, item.status)}}
+						</uni-td>
 					</uni-tr>
-					<uni-tr v-if="delay.length === 0">
-						<uni-td colspan="6" align="center">
+					<uni-tr v-if="delay.length === 0" style="border:none">
+						<uni-td style="border:none" colspan="7" align="center">
 							暂无正晚点信息或加载失败
 						</uni-td>
 					</uni-tr>
@@ -123,7 +142,7 @@
 
 			<view v-if="selectIndex==1">
 				<uni-section title="担当" type="line" style="background-color: transparent;"
-					title-font-size="25rpx"></uni-section>
+					title-font-size="28rpx"></uni-section>
 				<view class="ux-bg-white ux-border-radius ux-padding"
 					v-if="(carData.carOwner || '')+(carData.runner || '')+(carData.car || '')!=''">
 					<view class="ux-flex ux-space-between">
@@ -214,7 +233,7 @@
 					暂无担当
 				</view>
 				<uni-section title="交路" type="line" style="background-color: transparent;"
-					title-font-size="25rpx"></uni-section>
+					title-font-size="28rpx"></uni-section>
 				<navigator v-for="(item,index) in (carData.diagram || [])" :key="index"
 					:url="'/pages/train/trainResult?keyword='+item.train_num+'&date='+date">
 					<view class="ux-bg-white ux-border-radius ux-mt-small ux-flex">
@@ -240,7 +259,7 @@
 					暂无交路
 				</view>
 				<uni-section title="开行日" type="line" style="background-color: transparent;"
-					title-font-size="25rpx"></uni-section>
+					title-font-size="28rpx"></uni-section>
 				<calendar class="ux-bg-white ux-border-radius"
 					:highlighted-dates="(()=>{var l=[]; (carData.rundays || []).forEach((i)=>{l.push({date: i.replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3'), bgColor: '#114598'});});return l;})()">
 				</calendar>
@@ -349,6 +368,134 @@
 			back: function() {
 				uni.navigateBack()
 			},
+			/**
+			 * 计算实际到达/发车时间 (HH:mm)
+			 * @param {string|null} estimatedTime 预计时间，格式 "HH:mm"
+			 * @param {number|null} delayMinutes 晚点分钟数 (负数为早点)
+			 * @param {number|null} status 状态码 (1: 正点, 2: 晚点, 3: 早点)
+			 * @returns {string} 实际时间或 '-'
+			 */
+			calculateActualTime: function(estimatedTime, delayMinutes, status) {
+				// 1. 如果预计时间为 null/empty 或状态为 null/undefined，则为 "-"
+				if (!estimatedTime || estimatedTime === '-' || status === null || status === undefined) {
+					return '-';
+				}
+
+				// 2. 如果 delayMinutes 不是一个有效的数字，无法计算，返回 "-"
+				if (typeof delayMinutes !== 'number' || isNaN(delayMinutes) || delayMinutes === null) {
+					return '-';
+				}
+
+				// 3. 如果 status 为 1 且 delayMinutes 为 0，则为预计时间 (正点)
+				if (status === 1 && delayMinutes === 0) {
+					return estimatedTime;
+				}
+
+				// 时间计算逻辑: "HH:mm" + delayMinutes
+				const parts = estimatedTime.split(':');
+				let hours = parseInt(parts[0]);
+				let minutes = parseInt(parts[1]);
+
+				// 计算从一天开始的总分钟数 + 延迟分钟数
+				let totalMinutes = hours * 60 + minutes + delayMinutes;
+
+				// 处理时间环绕 (e.g., 23:50 + 20min = 00:10, 00:05 - 10min = 23:55)
+				const minutesInDay = 24 * 60;
+
+				// 使用取模运算获取最终分钟数，并处理负数结果
+				let finalMinutes = totalMinutes % minutesInDay;
+				if (finalMinutes < 0) {
+					finalMinutes += minutesInDay; // 确保结果在 0 到 1439 之间
+				}
+
+				let finalHours = Math.floor(finalMinutes / 60);
+				let finalMin = finalMinutes % 60;
+
+				// 格式化为 "HH:mm"
+				const formattedHours = String(finalHours).padStart(2, '0');
+				const formattedMinutes = String(finalMin).padStart(2, '0');
+
+				return `${formattedHours}:${formattedMinutes}`;
+			},
+
+			/**
+			 * 根据状态判断并返回状态文本
+			 * @param {number|null} delayMinutes 晚点分钟数 (负数为早点)
+			 * @param {number|null} status 状态码 (1: 正点, 2: 晚点, 3: 早点)
+			 * @returns {string} 状态文本或 '-'
+			 */
+			formatDelayStatus: function(delayMinutes, status) {
+				// 1. 如果 delayMinutes 或 status 为 null/undefined，则为 "-"
+				if (delayMinutes === null || status === null || delayMinutes === undefined || status === undefined) {
+					return '-';
+				}
+				
+				// 2. 如果 status 为 1 且 delayMinutes 为 0，则为 "正点"
+				if (status === 1 && delayMinutes === 0) {
+					return '正点';
+				}
+				
+				// 3. 如果 status 为 3 且 delayMinutes 为负数，则为 "早点{|delayMinutes|}分" (绿色)
+				if (status === 3 && delayMinutes < 0) {
+					return `早点${Math.abs(delayMinutes)}分`;
+				}
+				
+				// 4. 如果 status 为 2 且 delayMinutes 为正数，则为 "晚点{|delayMinutes|}分" (红色)
+				if (status === 2 && delayMinutes > 0) {
+					return `晚点${delayMinutes}分`;
+				}
+				
+				// Fallback
+				return '-'; 
+			},
+
+			/**
+			 * 根据状态返回对应的 CSS 颜色
+			 * @param {number|null} delayMinutes 晚点分钟数
+			 * @param {number|null} status 状态码
+			 * @returns {string} CSS 颜色字符串 (e.g., 'color: #c0392b;')
+			 */
+			getDelayStatusColor: function(delayMinutes, status) {
+				// 早点：绿色
+				if (status === 3 && delayMinutes < 0) {
+					return 'color: #27ae60; font-weight: bold;';
+				}
+				// 晚点：红色
+				if (status === 2 && delayMinutes > 0) {
+					return 'color: #c0392b; font-weight: bold;';
+				}
+				// 默认（正点或未知）：无特定颜色
+				return ''; 
+			},
+
+			/**
+			 * 根据状态返回徽章文本和类型
+			 * @param {number|null} delayMinutes 晚点分钟数
+			 * @param {number|null} status 状态码
+			 * @returns {object} {text: string, type: string} 
+			 */
+			getDelayBadgeText: function(delayMinutes, status) {
+				// 晚点
+				if (status === 2 && delayMinutes > 0) {
+					return {
+						text: '晚',
+						type: 'error' // 红色
+					};
+				}
+				// 早点
+				if (status === 3 && delayMinutes < 0) {
+					return {
+						text: '早',
+						type: 'success' // 绿色
+					};
+				}
+				// 正点或未知，不显示徽章
+				return {
+					text: '',
+					type: ''
+				};
+			},
+
 			fillInData: async function(mode) {
 				uni.showLoading({
 					title: "加载中"
