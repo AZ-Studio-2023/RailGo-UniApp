@@ -44,7 +44,7 @@
 				</view>
 			</view>
 			<view class="ux-flex ux-justify-content-center">
-				<uv-tabs :list="topTabList" lineWidth="60" lineColor="#114598" :activeStyle="{
+				<uv-tabs :list="topTabList" lineWidth="60" lineColor="#114599" :activeStyle="{
 							color: '#303133',
 							fontWeight: 'bold',
 							transform: 'scale(1.05)'
@@ -101,7 +101,7 @@
 					<uni-tr>
 						<uni-th align="center">车站</uni-th>
 						<uni-th align="center">车次</uni-th>
-						<uni-th align="center">到达时间<br>发车时间</uni-th>
+						<uni-th align="center">预计到达时间<br>预计发车时间</uni-th>
 						<uni-th align="center">停站时间</uni-th>
 						<uni-th align="center">日期</uni-th>
 						<uni-th align="center">状态</uni-th>
@@ -112,6 +112,11 @@
 						<uni-td>{{item.arrivalTime || ''}}<br>{{item.departureTime || ''}}</uni-td>
 						<uni-td>{{item.arrivalDate || ''}}</uni-td>
 						<uni-td>{{item.status || ''}}</uni-td>
+					</uni-tr>
+					<uni-tr v-if="delay.length === 0">
+						<uni-td colspan="6" align="center">
+							暂无正晚点信息或加载失败
+						</uni-td>
 					</uni-tr>
 				</uni-table>
 			</view>
@@ -278,8 +283,12 @@
 	import {
 		toRaw
 	} from "@vue/reactivity";
-	import uniGet from "@/scripts/req"; // 导入网络请求
-	
+	// 确保从 req.js 导入 uniGet 和 uniPost
+	import {
+		uniGet,
+		uniPost
+	} from "@/scripts/req";
+
 	export default {
 		components: {
 			calendar
@@ -296,7 +305,7 @@
 					carOwner: '',
 					car: '',
 					rundays: [],
-					diagram: []
+					diagram: [],
 				},
 				"colorMap": TRAIN_KIND_COLOR_MAP,
 				"carMap": CAR_PERFORMANCE,
@@ -323,11 +332,11 @@
 			this.date = options.date || '';
 
 			const mode = uni.getStorageSync("mode");
-			
+
 			const c = uni.getStorageSync("search");
 			uni.setStorage({
 				key: 'search',
-				data: c+1
+				data: c + 1
 			});
 			this.fillInData(mode);
 		},
@@ -342,15 +351,22 @@
 			},
 			fillInData: async function(mode) {
 				uni.showLoading({
-				    title: "加载中"
+					title: "加载中"
 				});
-				if (mode == "network") {
-					// --- 网络模式逻辑 ---
-					try {
-						if (!this.train) return;
-						const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/train/query?train=${encodeURIComponent(this.train)}`);
+				let loadSuccess = false; // 标记 carData 是否成功加载
+
+				try {
+					if (!this.train) return;
+
+					if (mode == "network") {
+						// --- 网络模式逻辑：获取车次详情 ---
+						const resp = await uniGet(
+							`https://data.railgo.zenglingkun.cn/api/train/query?train=${encodeURIComponent(this.train)}`
+						);
 						const result = resp.data;
-						if (result.error) {
+
+						if (result.error || !result.timetable || result.timetable.length === 0) {
+							// 失败处理：网络模式找不到数据
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -364,7 +380,6 @@
 								diagram: []
 							};
 							this.cardColor = '#114598';
-							uni.hideLoading()
 							uni.showToast({
 								title: '车次不存在',
 								icon: 'error'
@@ -372,18 +387,20 @@
 							const c = uni.getStorageSync("search");
 							uni.setStorage({
 								key: 'search',
-								data: c-1
+								data: c - 1
 							});
 							uni.redirectTo({
 								url: '/pages/404/404'
 							})
-							return;
+							return; // 结束执行
 						}
-						// 处理字段，确保安全
+
+						// 成功处理
 						this.carData = {
 							numberKind: result.numberKind || '',
 							numberFull: Array.isArray(result.numberFull) ? result.numberFull : [],
 							type: result.type || '',
+							// 预处理 timetable，确保安全
 							timetable: (result.timetable || []).map(item => ({
 								station: '',
 								stationTelecode: '',
@@ -404,39 +421,15 @@
 							diagram: Array.isArray(result.diagram) ? result.diagram : []
 						};
 						this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
-						uni.hideLoading()
-					} catch (error) {
-						console.error("数据加载失败", error);
-						uni.hideLoading()
-						const c = uni.getStorageSync("search");
-						uni.setStorage({
-							key: 'search',
-							data: c-1
-						});
-						this.carData = {
-							numberKind: '',
-							numberFull: [],
-							type: '',
-							timetable: [],
-							bureauName: '',
-							runner: '',
-							carOwner: '',
-							car: '',
-							rundays: [],
-							diagram: []
-						};
-						this.cardColor = '#114598';
-					}
-				} else {
-					// --- 本地模式逻辑 ---
-					try {
-						if (!this.keyword) {
-							return;
-						}
+						loadSuccess = true; // 标记成功
+
+					} else {
+						// --- 本地模式逻辑：获取车次详情 ---
 						const result = await doQuery("SELECT * FROM trains WHERE number='" + this.keyword +
 							"'", KEYS_STRUCT_TRAINS);
+
 						if (result && result.length > 0) {
-							// 修正：确保 carData 所有字段都有默认值，防止页面报错
+							// 成功处理
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -450,16 +443,14 @@
 								diagram: [],
 								...toRaw(result[0])
 							};
-	
+							// 处理 diagram 和 timetable
 							for (var i = 0; i < this.carData.diagram.length; i++) {
 								let dg = toRaw(await doQuery("SELECT code, numberFull FROM trains WHERE number='" + this
 									.carData.diagram[i].train_num + "'"))[0];
 								if (dg) {
-									// 修正：合并数据而不是只覆盖
 									Object.assign(this.carData.diagram[i], dg);
 								}
 							}
-	
 							this.carData.timetable = (this.carData.timetable || []).map(item => ({
 								station: '',
 								stationTelecode: '',
@@ -472,10 +463,11 @@
 								day: '-',
 								...item
 							}));
-	
 							this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
+							loadSuccess = true; // 标记成功
+
 						} else {
-							// 如果没有查询结果，也需要重置数据并给出提示
+							// 失败处理：本地模式找不到数据
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -496,31 +488,70 @@
 							const c = uni.getStorageSync("search");
 							uni.setStorage({
 								key: 'search',
-								data: c-1
+								data: c - 1
 							});
 							uni.redirectTo({
 								url: '/pages/404/404'
 							})
-							return;
+							return; // 结束执行
 						}
-					} catch (error) {
-						console.error("数据加载失败", error);
-						this.carData = {
-							numberKind: '',
-							numberFull: [],
-							type: '',
-							timetable: [],
-							bureauName: '',
-							runner: '',
-							carOwner: '',
-							car: '',
-							rundays: [],
-							diagram: []
-						};
-						this.cardColor = '#114598';
-					} finally {
-						uni.hideLoading();
 					}
+
+					// --- 统一逻辑：如果 carData 成功加载，则尝试获取正晚点信息（始终使用网络请求） ---
+					if (loadSuccess && this.carData.timetable.length > 0) {
+						const timetable = this.carData.timetable;
+						const fromStation = timetable[0].station;
+						const toStation = timetable[timetable.length - 1].station;
+
+						if (fromStation && toStation && this.date) {
+							try {
+								const delayResp = await uniPost(
+									'https://rail.moefactory.com/api/trainDetails/queryTrainDelayDetails', {
+										date: this.date,
+										trainNumber: this.train,
+										fromStationName: fromStation,
+										toStationName: toStation
+									}
+								);
+								// 检查响应数据是否包含有效的 delay 信息
+								if (delayResp.data && Array.isArray(delayResp.data.data)) {
+									this.delay = delayResp.data.data;
+								} else {
+									this.delay = [];
+								}
+							} catch (delayError) {
+								// 即使请求失败，也不影响车次详情页的显示
+								console.warn("获取正晚点信息失败（网络可能断开或接口错误）", delayError);
+								this.delay = []; // 正晚点请求失败，清空数据
+							}
+						}
+					}
+					// -------------------------------------------------------------------------
+
+				} catch (error) {
+					// 统一处理加载失败时的清理工作
+					console.error("数据加载失败", error);
+					this.carData = {
+						numberKind: '',
+						numberFull: [],
+						type: '',
+						timetable: [],
+						bureauName: '',
+						runner: '',
+						carOwner: '',
+						car: '',
+						rundays: [],
+						diagram: []
+					};
+					this.cardColor = '#114598';
+					this.delay = [];
+					const c = uni.getStorageSync("search");
+					uni.setStorage({
+						key: 'search',
+						data: c - 1
+					});
+				} finally {
+					uni.hideLoading();
 				}
 			},
 			tabChange: function(e) {

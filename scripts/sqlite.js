@@ -1,7 +1,7 @@
 // @/scripts/sqlite.js
 
 // #ifdef H5
-import uniGet from "@/scripts/req.js";
+import {uniGet} from "@/scripts/req.js";
 // #endif
 
 export async function loadDB() {

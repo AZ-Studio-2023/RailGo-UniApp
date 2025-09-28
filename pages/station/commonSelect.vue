@@ -51,7 +51,7 @@
 		KEYS_STRUCT_STATIONS,
 		KEYS_STRUCT_TRAINS
 	} from "@/scripts/config.js";
-	import uniGet from "@/scripts/req";
+import {uniGet} from "@/scripts/req";
 
 	export default {
 		data() {

@@ -77,7 +77,7 @@
 	// #ifdef APP
 	import { getSwitchList, switchIcons, restoreIcons } from "@/uni_modules/ima-icons";
 	// #endif
-	import uniGet from "@/scripts/req.js";
+import {uniGet} from "@/scripts/req.js";
 
 	export default {
 		data() {

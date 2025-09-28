@@ -88,7 +88,7 @@
 </template>
 
 <script>
-	import uniGet from "@/scripts/req.js";
+import {uniGet} from "@/scripts/req.js";
 	
 	export default {
 		data() {

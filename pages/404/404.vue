@@ -12,7 +12,7 @@
 		</view>
 		
 		<view class="ux-padding content-area">
-			<view class="ux-text-center"><br><br>
+			<view class="ux-text-center"><br>
 				<text class="ux-h0 ux-text-primary">404</text>
 				<br>
 				<text class="ux-h4 ux-text-dark ux-bold">很抱歉，你来到了没有轨道的荒原...</text>
@@ -29,22 +29,21 @@
 				</view>
 			</view>
 			
-			<!-- <br><br> -->
-			<!-- <view class="video-placeholder"></view> -->
+			<br><br>
+			<view class="video-placeholder"></view>
 			<br>
 
-			<button type="primary" style="background-color:#114598;color:#ffffff;" hover-class="ux-tap" 
+			<button type="primary" style="background-color:#114598;color:#ffffff;" hover-class="ux-tap"
 				@click="back()">重回正轨</button>
 			<br><br>
 		</view>
 		
-<!-- 		<web-view v-if="randomVideoUrl" :src="randomVideoUrl" class="video-webview" :style="videoStyle"></web-view> -->
+		<web-view v-if="randomVideoUrl" :src="randomVideoUrl" class="video-webview" :style="videoStyle"></web-view>
 	</view>
 </template>
 
 <script>
 	// 定义常量用于计算 web-view 尺寸
-	const VIDEO_WIDTH = 90; // 90vw
 	const ASPECT_RATIO = 9 / 16; // 16:9 比例
 	
 	export default {
@@ -56,14 +55,15 @@
 					"//player.bilibili.com/player.html?isOutside=true&aid=853706936&bvid=BV1vL4y1c7EL&cid=711536979&p=1"
 				],
 				randomVideoUrl: "",
-				videoStyle: {}, 
+				videoStyle: {},
 			}
 		},
 		onLoad() {
 			this.selectRandomVideo();
+			// 延迟计算，确保 DOM 渲染完成
 			setTimeout(() => {
 				this.calculateVideoPosition();
-			}, 300); 
+			}, 300);
 		},
 		onResize() {
 			this.calculateVideoPosition();
@@ -77,23 +77,52 @@
 				}
 				this.randomVideoUrl = selectedUrl;
 			},
+			
+			/**
+			 * 核心方法：计算 web-view 位置并执行 App 端原生修复
+			 */
 			calculateVideoPosition() {
-				uni.createSelectorQuery().select('.video-placeholder').boundingClientRect(rect => {
+				// 1. 获取占位符的位置和尺寸
+				uni.createSelectorQuery().in(this).select('.video-placeholder').boundingClientRect(rect => {
 					if (rect) {
-						const screenWidth = uni.getSystemInfoSync().windowWidth;
-						const rpxToPx = screenWidth / 750;
-
-						const videoHeightPx = rect.width * ASPECT_RATIO; 
+						// 计算 web-view 的高度 (16:9 比例)
+						const videoHeightPx = rect.width * ASPECT_RATIO;
 						
+						// 2. 更新 Vue 绑定的 style (适用于 H5/小程序，并作为 App 端备用)
 						this.videoStyle = {
-							top: `${rect.top}px`, 
+							top: `${rect.top}px`,
 							left: `${rect.left}px`,
 							width: `${rect.width}px`,
 							height: `${videoHeightPx}px`,
 						};
+						
+						// 3. **App 端修复：通过原生 API 强制定位**
+						// #ifdef APP-PLUS
+						// 使用 setTimeout 延迟执行，确保 web-view 组件已渲染
+						setTimeout(() => {  
+							// 获取当前页面的 web-view 原生容器
+							let currentWebview = this.$scope.$getAppWebview(); 
+							
+							// 获取 web-view 的原生控件（通常是第一个子节点）
+							let wv = currentWebview.children()[0];  
+							
+							if (wv) {
+								console.log("App端修复：强制设置 web-view 样式以精确定位");  
+								// 使用动态计算出的位置和尺寸来设置原生控件样式
+								wv.setStyle({  
+									// HBuilderX App 端的 setStyle 接受数值（px）
+									top: rect.top, 
+									left: rect.left, 
+									width: rect.width, 
+									height: videoHeightPx, 
+								});  
+							}
+						}, 100); // 100ms 延迟确保组件挂载
+						// #endif
 					}
 				}).exec();
 			},
+			
 			back: function() {
 				if (getCurrentPages().length > 1) {
 					uni.navigateBack();
@@ -110,24 +139,24 @@
 <style>
 	/* 404 数字的特大样式 */
 	.ux-h0 {
-		font-size: 200rpx; 
+		font-size: 200rpx;
 		font-weight: 900;
 		line-height: 1.2;
 	}
 	
 	/* 诗词容器样式 */
 	.poem-container {
-		margin: 20rpx auto; 
+		margin: 20rpx auto;
 		padding: 20rpx 40rpx;
-		border-left: 5rpx solid #114598; 
-		width: max-content; 
-		text-align: left; 
+		border-left: 5rpx solid #114598;
+		width: max-content;
+		text-align: left;
 	}
 	
 	/* 返回图标区域，增加点击范围 */
-	.back-icon-area { 
-		width: 60rpx; 
-		padding: 10rpx; 
+	.back-icon-area {
+		width: 60rpx;
+		padding: 10rpx;
 	}
 	
 	/* 确保粗体生效 */
@@ -138,22 +167,20 @@
 	/* 视频占位符（用于定位 web-view） */
 	.video-placeholder {
 		/* 占位符宽度，用于计算 web-view 的实际尺寸和位置 */
-		width: 90vw; 
-		max-width: 600rpx; 
+		width: 90vw;
+		max-width: 600rpx;
 		margin-left: auto;
 		margin-right: auto;
 		/* 使用 padding-bottom hack 来确保占位符的高度是 16:9 比例 */
-		padding-bottom: calc(90vw * 0.5625); 
+		padding-bottom: calc(90vw * 0.5625);
 		max-height: 337.5rpx; /* 最大高度 */
-		/* background-color: #e0e0e0; /* 调试用，可删除 */
 	}
 
 	/* web-view 组件：设置为 fixed 定位，并由 JS 赋予精确的 top/left/width/height */
 	.video-webview {
 		position: fixed;
 		/* z-index 设高，虽然 web-view 默认就高，但保留以防万一 */
-		z-index: 999; 
-		/* 移除静态 width/height，它们将由 videoStyle 动态设置 */
+		z-index: 999;
 	}
 	
 	/* 确保主体内容区域可以滚动 */

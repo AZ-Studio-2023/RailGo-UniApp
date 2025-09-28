@@ -85,7 +85,7 @@
 	</view>
 </template>
 <script>
-	import uniGet from "@/scripts/req.js";
+import {uniGet} from "@/scripts/req.js";
 
 	export default {
 		// Railgo Code

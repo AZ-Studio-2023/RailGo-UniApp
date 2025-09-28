@@ -2,7 +2,7 @@
 	const nauth = false;
 	const version = "1.0.0"
 	const version_number = 4
-	import uniGet from "./scripts/req";
+import {uniGet} from "./scripts/req";
 	// UXUI INIT
 	import {
 		loadDB

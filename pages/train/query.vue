@@ -130,7 +130,7 @@
 	import {
 		TRAIN_KIND_COLOR_MAP
 	} from "@/scripts/config.js";
-import uniGet from "../../scripts/req";
+import {uniGet} from "../../scripts/req";
 	export default {
 		data() {
 			return {

@@ -13,7 +13,7 @@
 	</view>
 </template>
 <script>
-	import uniGet from "@/scripts/req.js";
+import {uniGet} from "@/scripts/req.js";
 	import {
 		loadDB
 	} from "@/scripts/sqlite.js";
