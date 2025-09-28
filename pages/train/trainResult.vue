@@ -503,28 +503,6 @@
 			},
 
 			fillInData: async function(mode) {
-				// --- MODIFICATION START ---
-				// 如果处于完全离线模式 (ol == true)，则不获取时刻表/正晚点数据，直接返回
-				if (this.isOnlyOfflineMode) {
-					this.carData = {
-						numberKind: '',
-						numberFull: [],
-						type: '',
-						timetable: [],
-						bureauName: '',
-						runner: '',
-						carOwner: '',
-						car: '',
-						rundays: [],
-						diagram: []
-					};
-					this.cardColor = '#114598';
-					this.delay = [];
-					uni.hideLoading(); // 确保隐藏加载提示
-					console.log("Full offline mode is active, skipping data fetch.");
-					return; // 提前结束函数
-				}
-				// --- MODIFICATION END ---
 				
 				uni.showLoading({
 					title: "加载中"
@@ -668,7 +646,10 @@
 							return; 
 						}
 					}
-
+					if (this.isOnlyOfflineMode){
+						uni.hideLoading()
+						return
+					}
 					if (loadSuccess && this.carData.timetable.length > 0) {
 						const timetable = this.carData.timetable;
 						const fromStation = timetable[0].station;

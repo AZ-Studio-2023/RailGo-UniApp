@@ -71,9 +71,9 @@
 		},
 		methods: {
 			finish: function() {
-				// 将本地数据库模式与网络请求合并，不再弹出错误提示
 				uni.setStorageSync("mode", this.checked)
 				uni.setStorageSync("oobe", true)
+				uni.setStorageSync("ol", false)
 				if (this.checked == "local" || this.checked == "ol") {
 					if (this.checked == "ol"){
 						uni.setStorageSync("mode", "local")
