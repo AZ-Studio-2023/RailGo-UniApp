@@ -70,6 +70,12 @@
 			}
 		},
 		{
+			"path": "pages/about/mode",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
 			"path": "pages/update/db",
 			"style": {
 				"navigationBarTitleText": ""
@@ -121,6 +127,20 @@
 		},
 		{
 			"path" : "pages/404/404",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/assignment/query",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/assignment/result",
 			"style" : 
 			{
 				"navigationBarTitleText" : ""

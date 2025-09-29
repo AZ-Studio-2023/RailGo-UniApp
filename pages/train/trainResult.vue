@@ -100,43 +100,35 @@
 				<uni-table style="border:none">
 					<uni-tr style="border:none">
 						<uni-th style="border:none" align="center">车站</uni-th>
-						<uni-th style="border:none" align="center">车次</uni-th>
-						<uni-th style="border:none" align="center">预计到达时间<br>预计发车时间</uni-th>
-						<uni-th style="border:none" align="center">实际到达时间<br>实际发车时间</uni-th>
-						<uni-th style="border:none" align="center">停站时间</uni-th>
-						<uni-th style="border:none" align="center">日期</uni-th>
 						<uni-th style="border:none" align="center">状态</uni-th>
+						<uni-th style="border:none" align="center">预计到达<br>发车</uni-th>
+						<uni-th style="border:none" align="center">实际到达<br>发车</uni-th>
+						<uni-th style="border:none" align="center">停站</uni-th>
+						<uni-th style="border:none" align="center">日期</uni-th>
 					</uni-tr>
 					<uni-tr v-for="(item,index) in delay" :key="index" style="border:none" hover-class="ux-bg-grey5">
 						<uni-td style="border:none" align="center">
 							<view class="ux-flex ux-align-items-center ux-justify-content-center">
 								<text>{{item.stationName || ''}}</text>
-								<uni-badge v-if="getDelayBadgeText(item.delayMinutes, item.status).text"
-									:text="getDelayBadgeText(item.delayMinutes, item.status).text"
-									:type="getDelayBadgeText(item.delayMinutes, item.status).type"
-									size="small"
-									style="margin-left: 5px;"
-								></uni-badge>
 							</view>
 						</uni-td>
-						<uni-td style="border:none" align="center">{{item.trainNumber || ''}}</uni-td>
+						<uni-td style="border:none" align="center" :style="getDelayStatusColor(item.delayMinutes, item.status)">
+							{{formatDelayStatus(item.delayMinutes, item.status)}}
+						</uni-td>
 						<uni-td style="border:none" align="center">{{item.arrivalTime || '-'}}<br>{{item.departureTime || '-'}}</uni-td>
 						<uni-td style="border:none" align="center">
 							{{calculateActualTime(item.arrivalTime, item.delayMinutes, item.status)}}
 							<br>
 							{{calculateActualTime(item.departureTime, item.delayMinutes, item.status)}}
 						</uni-td>
-						<uni-td style="border:none" align="center">{{item.stopMinutes || ''}}'</uni-td>
+						<uni-td style="border:none" align="center">{{item.stopMinutes === null || item.stopMinutes === undefined ? '-' : item.stopMinutes + "'"}}</uni-td>
 						<uni-td style="border:none" align="center">{{item.arrivalDate || ''}}</uni-td>
-						<uni-td style="border:none" align="center" :style="getDelayStatusColor(item.delayMinutes, item.status)">
-							{{formatDelayStatus(item.delayMinutes, item.status)}}
-						</uni-td>
 					</uni-tr>
 					<uni-tr v-if="delay.length === 0" style="border:none">
-						<uni-td style="border:none" colspan="7" align="center"  v-if="isOnlyOfflineMode == false">
+						<uni-td style="border:none" colspan="6" align="center"  v-if="isOnlyOfflineMode == false">
 							暂无正晚点信息或加载失败
 						</uni-td>
-						<uni-td style="border:none" colspan="7" align="center" class="ux-color-gray" v-if="isOnlyOfflineMode">
+						<uni-td style="border:none" colspan="6" align="center" class="ux-color-gray" v-if="isOnlyOfflineMode">
 							仅离线模式下无法使用该功能
 						</uni-td>
 					</uni-tr>
@@ -212,8 +204,10 @@
 								</view>
 							</view>
 							<view class="ux-mt-small">
-								<image v-if="carMap[carData.car.replace(' 重联','')]"
-									:src="carMap[carData.car.replace(' 重联','')][4]" mode="aspectFit"
+								<image v-if="carImageUrl"
+									:src="carImageUrl" 
+									@error="onImageError"
+									mode="aspectFit"
 									style="max-width:350rpx; height: 200rpx;overflow: hidden; border-radius: 500rpx;"></image>
 							</view>
 						</view>
@@ -345,7 +339,8 @@
 					name: '路径'
 				}],
 				"selectIndex": 0,
-				"isOnlyOfflineMode": false // 新增：用于存储 ol 状态
+				"isOnlyOfflineMode": false,
+				"carImageUrl": "" // 新增：当前显示的动车组图片 URL
 			}
 		},
 		onLoad(options) {
@@ -473,33 +468,31 @@
 				// 默认（正点或未知）：无特定颜色
 				return '';
 			},
-
+			
 			/**
-			 * 根据状态返回徽章文本和类型
-			 * @param {number|null} delayMinutes 晚点分钟数
-			 * @param {number|null} status 状态码
-			 * @returns {object} {text: string, type: string}
+			 * 图片加载失败时的处理函数，实现 Fallback 逻辑
 			 */
-			getDelayBadgeText: function(delayMinutes, status) {
-				// 晚点
-				if (status === 2 && delayMinutes > 0) {
-					return {
-						text: '晚',
-						type: 'error' // 红色
-					};
+			onImageError: function(e) {
+				const primaryUrlPrefix = 'https://tp.railgo.zenglingkun.cn/api/';
+				
+				// 1. 检查是否正在尝试加载在线 API URL
+				if (this.carImageUrl && this.carImageUrl.startsWith(primaryUrlPrefix)) {
+					const carModel = this.carData.car ? this.carData.car.replace(' 重联', '') : null;
+					
+					// 2. 检查本地 carMap 是否存在 Fallback URL
+					if (carModel && this.carMap[carModel] && this.carMap[carModel][4]) {
+						// 切换到本地 carMap 中的 URL (Fallback)
+						this.carImageUrl = this.carMap[carModel][4];
+						console.warn(`Image load failed for primary URL. Falling back to: ${this.carImageUrl}`);
+					} else {
+						// 没有本地 fallback URL，清除图片
+						this.carImageUrl = '';
+					}
+				} else {
+					// 3. 如果是本地 fallback URL 加载失败，则清除图片，停止尝试
+					this.carImageUrl = '';
+					console.error(`Image load failed for fallback URL. Image removed.`);
 				}
-				// 早点
-				if (status === 3 && delayMinutes < 0) {
-					return {
-						text: '早',
-						type: 'success' // 绿色
-					};
-				}
-				// 正点或未知，不显示徽章
-				return {
-					text: '',
-					type: ''
-				};
 			},
 
 			fillInData: async function(mode) {
@@ -646,10 +639,23 @@
 							return; 
 						}
 					}
+					
+					// -------------------------------------------------------------------------
+					// **图片 URL 初始化逻辑**
+					const carModel = this.carData.car ? this.carData.car.replace(' 重联', '') : null;
+					if (carModel) {
+						// 1. 设置主 URL (在线 API)
+						this.carImageUrl = `https://tp.railgo.zenglingkun.cn/api/${encodeURIComponent(carModel)}.png`;
+					} else {
+						this.carImageUrl = '';
+					}
+					// -------------------------------------------------------------------------
+					
 					if (this.isOnlyOfflineMode){
 						uni.hideLoading()
 						return
 					}
+					uni.hideLoading()
 					if (loadSuccess && this.carData.timetable.length > 0) {
 						const timetable = this.carData.timetable;
 						const fromStation = timetable[0].station;
@@ -657,8 +663,11 @@
 
 						if (fromStation && toStation && this.date) {
 							try {
+								uni.showLoading({
+									title: '加载正晚点数据'
+								})
 								const delayResp = await uniPost(
-									'https://rail.moefactory.com/api/trainDetails/queryTrainDelayDetails', {
+									'https://delay.data.railgo.zenglingkun.cn/api/trainDetails/queryTrainDelayDetails', {
 										date: this.date,
 										trainNumber: this.train,
 										fromStationName: fromStation,
@@ -674,6 +683,7 @@
 								console.warn("获取正晚点信息失败（网络可能断开或接口错误）", delayError);
 								this.delay = []; 
 							}
+							uni.hideLoading()
 						}
 					}
 					// -------------------------------------------------------------------------

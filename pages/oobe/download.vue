@@ -112,7 +112,7 @@ import {uniGet} from "@/scripts/req.js";
 		
 		    // #ifdef H5
 		    uni.setStorageSync("oobe", true);
-		    uni.setStorageSync("mode", "online");
+		    uni.setStorageSync("mode", "network");
 		    uni.reLaunch({ 
 		        url: '/pages/index/index' 
 		    });

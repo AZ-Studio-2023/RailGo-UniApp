@@ -65,51 +65,75 @@
 						value: "ol"
 					}
 				],
-				"checked": "network",
+				// Initialize checked from storage or use default 'network'
+				"checked": "network", 
 				"msgType": "success",
 			}
 		},
 		methods: {
 			finish: function() {
-				uni.setStorageSync("mode", this.checked)
-				uni.setStorageSync("oobe", true)
-				uni.setStorageSync("ol", false)
-				if (this.checked == "local" || this.checked == "ol") {
-					if (this.checked == "ol"){
-						uni.setStorageSync("mode", "local")
-						uni.setStorageSync("ol", true)
-					}
-					// #ifdef APP
-					uni.getNetworkType({
-						success: (res) => { 
-							if (res.networkType === "none") {
-								this.$refs.error_no_internet.open();
-							} else if (res.networkType === "wifi" || res.networkType === "ethernet") {
-								this.$refs.next_add.open();
-							} else {
-								this.$refs.next_not_wifi.open();
+				// The actual mode to store is 'network' or 'local'
+				let finalMode = this.checked === 'ol' ? 'local' : this.checked;
+				let isOnlyLocal = this.checked === 'ol';
+				
+				uni.setStorageSync("mode", finalMode);
+				uni.setStorageSync("oobe", true);
+				uni.setStorageSync("ol", isOnlyLocal);
+
+				// Check if the selected mode is one of the offline modes
+				if (finalMode === "local") {
+					// Check the offline database version
+					// It's considered present if offlineDataVersion > 0
+					const offlineDataVersion = uni.getStorageSync("offlineDataVersion") || 0;
+					
+					if (offlineDataVersion > 0) {
+						// Database exists, navigate directly to index
+						uni.navigateTo({
+							url: '/pages/index/index'
+						});
+					} else {
+						// Database is not present (version is 0 or null), prompt for download
+						// #ifdef APP
+						uni.getNetworkType({
+							success: (res) => {
+								if (res.networkType === "none") {
+									this.$refs.error_no_internet.open();
+								} else if (res.networkType === "wifi" || res.networkType === "ethernet") {
+									this.$refs.next_add.open();
+								} else {
+									this.$refs.next_not_wifi.open();
+								}
 							}
-						}
-					});
-					// #endif
-					// #ifndef APP
-					this.$refs.next_add.open();
-					// #endif
+						});
+						// #endif
+						// #ifndef APP
+						this.$refs.next_add.open();
+						// #endif
+					}
 				} else {
 					uni.navigateTo({
 						url: '/pages/index/index'
-					})
+					});
 				}
-				
-				
-
 			},
 			confirmDownloadNow: function() {
-				uni.setStorageSync("mode", this.checked)
-				uni.setStorageSync("oobe", true)
+				let finalMode = this.checked === 'ol' ? 'local' : this.checked;
+				let isOnlyLocal = this.checked === 'ol';
+				
+				uni.setStorageSync("mode", finalMode);
+				uni.setStorageSync("oobe", true);
+				uni.setStorageSync("ol", isOnlyLocal);
+				
 				uni.navigateTo({
 					url: '/pages/oobe/download'
-				})
+				});
+			}
+		},
+		onLoad() {
+			if (uni.getStorageSync("ol")){
+				this.checked = "ol"
+			} else{
+				this.checked = uni.getStorageSync("mode")
 			}
 		}
 	}

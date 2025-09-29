@@ -17,17 +17,18 @@
 				<input type="text" class="ux-form-input ux-padding-small" placeholder="G1202 或 CR400BF-5033"
 					@input="inputData" />
 			</view>
-			<view>
+<!-- 			<view>
 				<switch disabled class="ux-pb-small" color="#114598" style="transform:scale(0.7);margin-left:-1vh;" @change="futureData"/>
 				<text class="va">查询未来车次信息</text>
-			</view>
+			</view> -->
 			<button type="primary" style="background-color:#114598;color:#ffffff;" hover-class="ux-tap"
 				@click="jumpToResult()">查询</button>
 			<br>
 			<view class="ux-padding-small ux-mb ux-h6 ux-text-center"
 				style="background-color:#e9eef5;border:1px solid #114598;border-radius:10rpx;color:#114598;">
 				<text>本功能支持车组模糊查询及未来车次查询功能<br>支持重连车组合并展示<br></text>
-				<text class="ux-bold">信息仅供参考，请以铁路运营企业实际运用为准</text>
+				<text class="ux-bold">信息仅供参考，请以铁路运营企业实际运用为准</text><br>
+				<text class="ux-bold">仅离线模式不可用该功能</text>
 			</view>
 			<br>
 			<view class="ux-flex ux-row ux-justify-content-center">
@@ -41,8 +42,7 @@
 	export default {
 		data() {
 			return {
-				"keyword": "",
-				"future": true
+				"keyword": ""
 			}
 		},
 		onShow() {
@@ -68,7 +68,7 @@
 					return;
 				}
 				uni.navigateTo({
-					url: "/pages/emu/result?keyword=" + this.keyword + "&future=" + this.future
+					url: "/pages/emu/result?keyword=" + this.keyword
 				});
 			},
 			inputData: function(e) {

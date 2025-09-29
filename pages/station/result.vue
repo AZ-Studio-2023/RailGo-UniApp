@@ -112,11 +112,36 @@
 				</view>
 			</view>
 
+			<view class="ux-pt dark-table-wrapper" v-if="selectIndex==1" style="margin-top: 20rpx;">
+				<uni-table :loading="bigScreenLoading" emptyText="暂无数据" class="dark-table">
+					<uni-tr>
+						<uni-th align="center">车次</uni-th>
+						<uni-th align="center">状态</uni-th>
+						<uni-th align="center">始发站</uni-th>
+						<uni-th align="center">终到站</uni-th>
+						<uni-th align="center">开点</uni-th>
+						<uni-th align="center">候车/检票</uni-th>
+					</uni-tr>
+					<uni-tr v-for="(row, index) in bigScreenData" :key="index">
+						<uni-td align="center">{{ row[0] }}</uni-td>
+						<uni-td align="center">
+							<text :style="{color: getStatusColor(row[5])}">{{ row[5] }}</text>
+						</uni-td>
+						<uni-td align="center">{{ row[1] }}</uni-td>
+						<uni-td align="center">{{ row[2] }}</uni-td>
+						<uni-td align="center">{{ formatDepartureTime(row[3]) }}</uni-td>
+						<uni-td align="center">{{ row[4] }}</uni-td>
+					</uni-tr>
+				</uni-table>
+				<view v-if="bigScreenData.length==0 && !bigScreenLoading" class="ux-padding ux-text-center">
+					<text style="color: white; opacity: 0.6;">本站暂无大屏数据</text>
+				</view>
+			</view>
+			
 			<view class="ux-padding ux-text-center" v-if="selectIndex==2">
 				<text>暂未开放，敬请期待</text>
 			</view>
 		</view>
-	</view>
 	<uni-popup ref="menu_sort" border-radius="10rpx 10rpx 0 0">
 		<view class="popup-content">
 			<view class="ux-bg-white ux-padding ux-border-radius" style="width:70vw;">
@@ -211,7 +236,7 @@
 			</view>
 		</view>
 	</uni-popup>
-</template>
+    </view> </template>
 
 <script>
 	import {
@@ -239,10 +264,9 @@
 					"行": "#459811",
 					"运": "#5499c7"
 				},
+				// 默认只包含“车次”和“路线”，如果为客运站则在 fillInData 中添加“大屏”
 				topTabList: [{
 					name: '车次',
-				}, {
-					name: '大屏',
 				}, {
 					name: '路线'
 				}],
@@ -252,7 +276,11 @@
 				colorMap: TRAIN_KIND_COLOR_MAP,
 				filterTypeState: ["G", "D", "C", "Z", "T", "K", "12345678", "S", "LY"],
 				filterSourceState: ["P", "D", "A"],
-				sortState: "departure"
+				sortState: "departure",
+				// --- 新增大屏数据和加载状态 ---
+				bigScreenData: [],
+				bigScreenLoading: false
+				// -------------------------------
 			}
 		},
 		onLoad(options) {
@@ -296,6 +324,7 @@
 					title: "加载中"
 				});
 
+				let success = false;
 				if (mode == "network") {
 					try {
 						const resp = await uniGet(`https://data.railgo.zenglingkun.cn/api/station/query?telecode=${this.keyword}`);
@@ -318,6 +347,7 @@
 						}
 						this.data = result.data || {};
 						this.trains = result.trains || [];
+						success = true;
 					} catch (error) {
 						uni.showToast({
 							title: '加载失败',
@@ -330,7 +360,9 @@
 					}
 				} else { // 本地模式
 					try {
-						this.data = toRaw((await doQuery("SELECT * FROM stations WHERE telecode='" + this.keyword + "'", KEYS_STRUCT_STATIONS))[0]);
+						const stationData = (await doQuery("SELECT * FROM stations WHERE telecode='" + this.keyword + "'", KEYS_STRUCT_STATIONS))[0];
+						this.data = toRaw(stationData);
+						
 						if (this.data.trainList && this.data.trainList.length > 0) {
 							// 获取所有列车数据
 							const rawTrains = await doQuery(
@@ -359,16 +391,82 @@
 						} else {
 							this.trains = [];
 						}
+						success = !!this.data.name; // 检查是否成功获取到车站数据
 					} catch (error) {
 						console.error("本地数据加载失败", error);
 					}
 				}
-				this.applySortingAndFiltering(); // 初始加载时应用一次排序和筛选
 				uni.hideLoading();
+				if (success) {
+					// 1. 检查是否为客运站
+					const isPassengerStation = Array.isArray(this.data.type) && this.data.type.includes("客");
+					if (isPassengerStation) {
+						// 2. 如果是客运站，添加“大屏”tab到索引1（“车次”和“路线”之间）
+						this.topTabList.splice(1, 0, { name: '大屏' });
+						uni.showLoading({
+							title: '加载大屏数据'
+						})
+						// 3. 异步获取大屏数据
+						await this.getBigScreenData();
+						uni.hideLoading()
+					}
+					
+					this.applySortingAndFiltering(); // 初始加载时应用一次排序和筛选
+				}
+
+				
 			},
 			tabChange: function(e) {
 				this.selectIndex = e.index;
 			},
+			// --- 获取大屏数据的方法 ---
+			getBigScreenData: async function() {
+
+				if (!this.data.name) return; // 车站名不存在则不查询
+				this.bigScreenLoading = true;
+				try {
+					// 移除 '站' 字并进行 URI 编码
+					const stationName = this.data.name.replace(/站$/, ''); 
+					const encodedName = encodeURIComponent(stationName);
+					const url = `https://screen.data.railgo.zenglingkun.cn/station/${encodedName}`;
+					const resp = await uniGet(url);
+					
+					// 检查响应数据结构
+					if (resp.data && Array.isArray(resp.data.data)) {
+						this.bigScreenData = resp.data.data;
+					} else {
+						this.bigScreenData = [];
+					}
+				} catch (error) {
+					console.error("大屏数据加载失败", error);
+					// 不弹出 toast，静默失败，因为主数据已加载
+					this.bigScreenData = [];
+				} finally {
+					this.bigScreenLoading = false;
+				}
+			},
+			
+			// --- 时间格式化方法 ---
+			formatDepartureTime(fullTime) {
+				if (!fullTime) return '--:--';
+				// 提取时间部分 (HH:mm)
+				const parts = fullTime.split(' ');
+				return parts.length > 1 ? parts[1].substring(0, 5) : '--:--';
+			},
+			
+			// --- 状态颜色逻辑 ---
+			getStatusColor(status) {
+				if (!status) return 'white'; // 默认白色
+				if (status.includes('正在检票')) {
+					return '#27ae60'; // 绿色
+				} else if (status.includes('停止检票') || status.includes('晚点')) {
+					return '#e74c3c'; // 红色
+				} else if (status.includes('早点')) {
+					return '#27ae60'; // 绿色
+				}
+				return 'white'; // 默认白色
+			},
+			// -------------------------------
 			openSortMenu: function() {
 				this.$refs.menu_sort.open();
 			},
@@ -518,5 +616,22 @@
 
 	.status-bar {
 		height: var(--status-bar-height);
+	}
+	
+	.dark-table-wrapper {
+		background-color: #2c3e50; 
+		border-radius: 10rpx;
+		padding: 10rpx;
+	}
+
+	.dark-table .uni-table-th,
+	.dark-table .uni-table-td {
+		color: white !important;
+		background-color: #3b506b !important; 
+		border-color: #3b506b !important; 
+	}
+
+	.dark-table .uni-table-th {
+		background-color: #1f3041 !important;
 	}
 </style>

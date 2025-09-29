@@ -56,7 +56,7 @@
 								class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
-				<navigator url="/pages/oobe/mode"
+				<navigator url="/pages/about/mode"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
 						<text class="ux-text-left ux-text-small">更改模式</text>
