@@ -79,6 +79,14 @@
 						<text class="ux-text-small ux-color-grey1"><text class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
+				<navigator url="/pages/about/sponsor"
+					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
+					<view class="ux-flex ux-space-between">
+						<text class="ux-text-left ux-text-small">赞助</text>
+						<text class="ux-text-right ux-text-small ux-color-grey1"><text
+								class="icon">&#xe5c8;</text></text>
+					</view>
+				</navigator>
 				<navigator url="/pages/update/db"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">

@@ -33,7 +33,7 @@
 			<br>
 			<view class="ux-text-center ux-padding-small ux-mb ux-h6"
 				style="background-color:#e9eef5;border:1px solid #114598;border-radius:10rpx;color:#114598;">
-				<text class="ux-bold">信息仅供参考 请以铁路运营企业实际运用为准</text>
+				<text class="ux-bold">信息仅供参考 请以实际为准</text>
 			</view>
 			<br>
 			<view class="ux-flex ux-row ux-justify-content-center">

@@ -111,7 +111,10 @@
 					<text class="ux-text-small ux-opacity-4">—— 数据来源: RailGo.Parser ——</text>
 				</view>
 			</view>
-
+			<view class="ux-text-center ux-padding-small ux-mb ux-h6"  v-if="selectIndex==1"
+				style="background-color:#e9eef5;border:1px solid #114598;border-radius:10rpx;color:#114598; margin-top: 20rpx">
+				<text class="ux-bold">信息仅供参考 请以车站现场公告为准</text>
+			</view>
 			<view class="ux-pt dark-table-wrapper" v-if="selectIndex==1" style="margin-top: 20rpx;">
 				<uni-table :loading="bigScreenLoading" emptyText="暂无数据" class="dark-table">
 					<uni-tr>
@@ -133,11 +136,12 @@
 						<uni-td align="center">{{ row[4] }}</uni-td>
 					</uni-tr>
 				</uni-table>
+				
 				<view v-if="bigScreenData.length==0 && !bigScreenLoading" class="ux-padding ux-text-center">
 					<text style="color: white; opacity: 0.6;">本站暂无大屏数据</text>
 				</view>
+
 			</view>
-			
 			<view class="ux-padding ux-text-center" v-if="selectIndex==2">
 				<text>暂未开放，敬请期待</text>
 			</view>
