@@ -111,11 +111,11 @@
 					<text class="ux-text-small ux-opacity-4">—— 数据来源: RailGo.Parser ——</text>
 				</view>
 			</view>
-			<view class="ux-text-center ux-padding-small ux-mb ux-h6"  v-if="selectIndex==1"
+            <view class="ux-text-center ux-padding-small ux-mb ux-h6"  v-if="topTabList[selectIndex] && topTabList[selectIndex].name === '大屏'"
 				style="background-color:#e9eef5;border:1px solid #114598;border-radius:10rpx;color:#114598; margin-top: 20rpx">
 				<text class="ux-bold">信息仅供参考 请以车站现场公告为准</text>
 			</view>
-			<view class="ux-pt dark-table-wrapper" v-if="selectIndex==1" style="margin-top: 20rpx;">
+			<view class="ux-pt dark-table-wrapper" v-if="topTabList[selectIndex] && topTabList[selectIndex].name === '大屏'" style="margin-top: 20rpx;">
 				<uni-table :loading="bigScreenLoading" emptyText="暂无数据" class="dark-table">
 					<uni-tr>
 						<uni-th align="center">车次</uni-th>
@@ -142,7 +142,7 @@
 				</view>
 
 			</view>
-			<view class="ux-padding ux-text-center" v-if="selectIndex==2">
+			<view class="ux-padding ux-text-center" v-if="topTabList[selectIndex] && topTabList[selectIndex].name === '路线'">
 				<text>暂未开放，敬请期待</text>
 			</view>
 		</view>
@@ -404,6 +404,9 @@
 				if (success) {
 					// 1. 检查是否为客运站
 					const isPassengerStation = Array.isArray(this.data.type) && this.data.type.includes("客");
+                    // IMPORTANT: Reset topTabList to default before potentially adding '大屏'
+                    this.topTabList = [{ name: '车次' }, { name: '路线' }];
+                    
 					if (isPassengerStation) {
 						// 2. 如果是客运站，添加“大屏”tab到索引1（“车次”和“路线”之间）
 						this.topTabList.splice(1, 0, { name: '大屏' });
