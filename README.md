@@ -7,7 +7,7 @@
   
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![UniApp](https://img.shields.io/badge/UniApp-Vue3-green.svg)](https://uniapp.dcloud.io/)
-  [![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20H5%20%7C%20小程序-lightgrey.svg)]()
+  [![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20HarmonyOS-lightgrey.svg)]()
 </div>
 
 ## 📖 项目简介
