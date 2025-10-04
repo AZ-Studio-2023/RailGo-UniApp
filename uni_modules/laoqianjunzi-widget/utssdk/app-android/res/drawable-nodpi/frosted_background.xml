@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    
+    <!-- 半透明白色背景 + 模糊效果 -->
+    <solid android:color="#B3FFFFFF" />  <!-- 70% 透明度白色 -->
+    
+    <!-- 圆角效果 (可选) -->
+    <corners android:radius="12dp" />
+    
+    <!-- 轻微内边距使内容更清晰 -->
+    <padding
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp" />
+</shape>

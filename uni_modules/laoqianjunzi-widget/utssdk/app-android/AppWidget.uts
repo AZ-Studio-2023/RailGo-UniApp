@@ -1,0 +1,129 @@
+import R from 'io.dcloud.uni_modules.laoqianjunziWidget.R';
+import AppWidgetProvider from 'android.appwidget.AppWidgetProvider';
+import Context from 'android.content.Context';
+import AppWidgetManager from 'android.appwidget.AppWidgetManager';
+import RemoteViews from 'android.widget.RemoteViews';
+import Intent from 'android.content.Intent';
+import Handler from 'android.os.Handler';
+import ComponentName from 'android.content.ComponentName';
+
+/**
+ * AppWidget 小组件主类
+ * 负责响应系统广播、周期更新、组件添加/移除等事件
+ */
+export class AppWidget extends AppWidgetProvider {
+
+    /**
+     * 构造函数，初始化时输出日志
+     */
+    constructor() {
+        super()
+        console.log("AppWidget")
+    }
+
+    /**
+     * 接收系统广播（如刷新、配置等）
+     * @param context 应用上下文
+     * @param intent 广播意图
+     */
+    override onReceive(context: Context, intent: Intent): void {
+        super.onReceive(context, intent)
+        console.warn("LOGO图标-onReceive")
+        // 可在此处理自定义广播或点击事件
+    }
+
+    /**
+     * 周期性更新小组件内容
+     * @param context 应用上下文
+     * @param appWidgetManager 小组件管理器
+     * @param appWidgetIds 所有需要更新的小组件ID数组
+     */
+    override onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ): void {
+        console.log("LOGO图标-周期更新函数被触发")
+        // 遍历所有小组件ID，逐个更新
+        for (appWidgetId in appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, appWidgetId)
+        }
+    }
+
+    /**
+     * 小组件首次被添加到桌面时触发
+     * @param _context 应用上下文
+     */
+    override onEnabled(_context: Context): void {
+        console.log("LOGO图标-组件被添加")
+        // 可在此保存状态或初始化数据
+        // uni.setStorageSync('AppWidget',1)
+    }
+
+    /**
+     * 小组件最后一个实例被移除时触发
+     * @param _context 应用上下文
+     */
+    override onDisabled(_context: Context): void {
+        console.log("LOGO图标-组件被移除")
+        // 可在此清理状态或释放资源
+        // uni.setStorageSync('AppWidget',0)
+    }
+
+    /**
+     * 更新单个小组件内容
+     * 支持异步操作（如网络请求），更新UI需在主线程执行
+     * @param context 应用上下文
+     * @param appWidgetManager 小组件管理器
+     * @param appWidgetId 当前小组件ID
+     */
+    function updateAppWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int
+    ) {
+        // 使用 setTimeout 模拟异步操作（如网络请求）
+        setTimeout(function () {
+            // 这里可替换为真实的网络请求逻辑
+            Thread.sleep(1000)
+            let widgetText = "当前股票价格为：13.25元"
+            // 构造 UI 更新任务
+            let uiRunnable = new UIRunnable(context, appWidgetManager, appWidgetId, widgetText)
+            // 在主线程更新小组件UI
+            UTSAndroid.getUniActivity()!.runOnUiThread(uiRunnable)
+        }, 500);
+    }
+
+    /**
+     * UI线程任务类，用于安全地更新小组件内容
+     */
+    class UIRunnable implements Runnable {
+        context: Context;
+        appWidgetManager: AppWidgetManager;
+        appWidgetId: Int;
+        widgetText: string;
+
+        /**
+         * 构造函数，保存必要参数
+         */
+        constructor(contextP: Context, appWidgetManagerP: AppWidgetManager, appWidgetIdP: Int, widgetTextP: string) {
+            super();
+            this.context = contextP
+            this.appWidgetManager = appWidgetManagerP
+            this.appWidgetId = appWidgetIdP
+            this.widgetText = widgetTextP;
+        }
+
+        /**
+         * run 方法在主线程执行，更新小组件UI
+         */
+        override run() {
+            // 创建 RemoteViews，指定布局文件
+            let views = new RemoteViews(this.context.packageName, R.layout.do_app_widget)
+            // 设置文本内容
+            views.setTextViewText(R.id.appwidget_text_sub, this.widgetText)
+            // 通知系统更新小组件
+            this.appWidgetManager.updateAppWidget(this.appWidgetId, views)
+        }
+    };
+}

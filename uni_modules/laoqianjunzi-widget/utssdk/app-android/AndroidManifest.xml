@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AndroidManifest.xml 用于声明应用的基本信息、权限和组件。
+    本文件主要配置了桌面小组件相关权限和组件声明。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
+    package="io.dcloud.uni_modules.laoqianjunziWidget">
+
+    <!-- 允许应用在设备启动后接收 BOOT_COMPLETED 广播，用于小组件自启动或恢复 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 允许应用向桌面安装快捷方式（部分系统支持） -->
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <!-- 允许应用请求安装快捷方式（部分系统支持） -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_SHORTCUT" />
+    <!-- 允许应用请求固定桌面小组件（Android 8.0+ 支持） -->
+    <uses-permission android:name="android.permission.REQUEST_PIN_APPWIDGET" />
+    <!-- 允许应用发送通知（用于小组件通知功能） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 允许应用绑定 AppWidget 服务（用于小组件交互） -->
+    <uses-permission android:name="android.permission.BIND_APPWIDGET" />
+
+    <application android:debuggable="true">
+        <!--
+            声明 AppWidget 小组件接收器
+            android:name 指定组件类名
+            android:exported=false 仅限本应用内部调用
+            android:label 组件显示名称
+        -->
+        <receiver
+            android:name="uts.sdk.modules.laoqianjunziWidget.AppWidget"
+            android:exported="false"
+            android:label="LOGO图标">
+            <!--
+                意图过滤器，声明小组件支持的广播事件
+                APPWIDGET_UPDATE：小组件刷新事件
+                APPWIDGET_CONFIGURE：小组件配置事件
+                DEFAULT：默认类别
+            -->
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!--
+                指定小组件的配置信息 XML 文件（位于 res/xml/app_widget_info.xml）
+                包含小组件布局、刷新频率等配置
+            -->
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/app_widget_info" />
+        </receiver>
+    
+        <!--
+            声明 TestWidget 测试小组件接收器
+            android:name 指定组件类名
+            android:exported=false 仅限本应用内部调用
+            android:label 组件显示名称
+        -->
+        <receiver
+            android:name="uts.sdk.modules.laoqianjunziWidget.TestWidget"
+            android:exported="false"
+            android:label="测试组件显示">
+            <!--
+                意图过滤器，声明小组件支持的广播事件
+                APPWIDGET_UPDATE：小组件刷新事件
+                APPWIDGET_CONFIGURE：小组件配置事件
+            -->
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+            <!--
+                指定测试小组件的配置信息 XML 文件（位于 res/xml/test_widget_info.xml）
+                包含小组件布局、刷新频率等配置
+            -->
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/test_widget_info" />
+        </receiver>
+        
+    </application>
+</manifest>

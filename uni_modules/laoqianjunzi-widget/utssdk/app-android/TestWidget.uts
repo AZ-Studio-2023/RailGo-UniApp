@@ -1,0 +1,90 @@
+import AppWidgetProvider from 'android.appwidget.AppWidgetProvider';
+import Context from 'android.content.Context';
+import AppWidgetManager from 'android.appwidget.AppWidgetManager';
+import RemoteViews from 'android.widget.RemoteViews';
+import R from 'io.dcloud.uni_modules.laoqianjunziWidget.R';
+import Intent from 'android.content.Intent';
+import ComponentName from 'android.content.ComponentName';
+
+/**
+ * TestWidget 测试桌面小组件类
+ * 负责周期性刷新、添加/移除等生命周期事件
+ */
+export class TestWidget extends AppWidgetProvider {
+    /**
+     * 构造函数
+     * 可用于初始化日志或状态
+     */
+    constructor() {
+        super()
+    }
+
+    /**
+     * 周期性刷新小组件内容
+     * @param context 应用上下文
+     * @param appWidgetManager 小组件管理器
+     * @param appWidgetIds 需要刷新的所有小组件ID数组
+     */
+    override onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ): void {
+        console.log("周期更新函数被触发")
+
+        // 发起网络请求（此处为演示，实际可替换为业务接口）
+        uni.request({
+            url: 'http://www.baidu.com', // 示例接口
+            dataType: "json",
+            responseType: "json",
+            method: 'POST',
+            data: { },
+            success: (res) => {
+                // 网络请求成功后，更新所有小组件内容
+                try {
+                    for (appWidgetId in appWidgetIds) {
+                        // 创建 RemoteViews，指定布局文件
+                        const views = new RemoteViews(context.packageName, R.layout.test_widget_layout);
+                        // 设置文本内容（此处写死为 "OK"，可根据接口返回动态设置）
+                        views.setTextViewText(R.id.test_value, "OK");
+                        // 设置图片资源
+                        views.setImageViewResource(R.id.test_image, R.drawable.app_preview)
+                        // 通知系统更新小组件
+                        appWidgetManager.updateAppWidget(appWidgetId, views);
+                    }
+                } catch (error) {
+                    console.error("error", error)
+                }
+            },
+            fail: (msg) => {
+                // 网络请求失败时可做容错处理
+            }
+        })
+    }
+
+    /**
+     * 预留接口：获取API数据
+     * 可扩展为异步获取并刷新小组件内容
+     */
+    public getApiData(): void {
+        // TODO: 实现自定义数据获取逻辑
+    }
+
+    /**
+     * 小组件首次被添加到桌面时触发
+     * @param _context 应用上下文
+     */
+    override onEnabled(_context: Context): void {
+        console.log("组件被添加")
+        // 可在此初始化数据或保存状态
+    }
+
+    /**
+     * 小组件最后一个实例被移除时触发
+     * @param _context 应用上下文
+     */
+    override onDisabled(_context: Context): void {
+        console.log("组件被移除")
+        // 可在此清理资源或状态
+    }
+}

@@ -295,27 +295,6 @@
 				key: 'search',
 				data: c + 1
 			});
-			
-			const now = new Date();
-			const currentUTC = now.getTime();
-			const utc8Offset = 8 * 60 * 60 * 1000;
-			const currentUTC8 = currentUTC + utc8Offset;
-
-			const startTime = new Date('2025/09/14 00:00:00 GMT+0800').getTime();
-			const endTime = new Date('2025/09/30 23:59:59 GMT+0800').getTime();
-			
-			const isWithinTimeWindow = currentUTC8 >= startTime && currentUTC8 <= endTime;
-
-			if (isWithinTimeWindow) {
-				if (this.keyword === 'DFB') {
-					uni.setStorageSync('dfh', true);
-					console.log("东方红车站已解锁");
-				}
-				if (this.keyword === 'TQT') {
-					uni.setStorageSync('tys', true);
-					console.log("太阳升车站已解锁");
-				}
-			}
 
 			this.fillInData(mode);
 		},

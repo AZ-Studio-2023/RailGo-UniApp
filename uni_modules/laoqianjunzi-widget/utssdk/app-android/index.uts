@@ -1,0 +1,109 @@
+/**
+ * 添加 LOGO 图标小组件到桌面
+ * 仅支持 Android 7.1（API 25）及以上系统
+ * 自动检测是否已添加，支持系统固定流程
+ */
+export function addAppWidget() {
+    // 输出调试日志
+    console.warn("调用 addAppWidget")
+    // 检查系统版本，低于 7.1 直接返回
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+        console.log("桌面小组件仅支持 Android 7.1 以上版本")
+        return;
+    }
+    // 获取应用上下文
+    const context = UTSAndroid.getAppContext() as Context
+    // 获取 AppWidgetManager 实例
+    const appWidgetManager = AppWidgetManager.getInstance(context);
+    // 构造 LOGO 图标小组件的 ComponentName
+    const myWidget = new ComponentName(context, "uts.sdk.modules.laoqianjunziWidget.AppWidget")
+    // 获取已添加的小组件 ID 列表
+    const appWidgetIds: IntArray = appWidgetManager.getAppWidgetIds(myWidget);
+    console.warn("当前已添加的 LOGO 图标小组件 ID 列表:", appWidgetIds)
+
+    // 如果已添加，则提示并返回
+    if (appWidgetIds.isNotEmpty()) {
+        uni.showToast({
+            title: "已添加",
+            icon: "none"
+        });
+        return;
+    }
+
+    // 检查系统是否支持桌面固定小组件
+    if (appWidgetManager.isRequestPinAppWidgetSupported()) {
+        console.warn("系统支持 requestPinAppWidget 固定流程")
+    }
+
+    // 尝试触发系统添加小组件流程
+    try {
+        const success = appWidgetManager.requestPinAppWidget(myWidget, null, null);
+        if (success) {
+            console.warn("已触发 LOGO 图标小组件固定流程");
+        } else {
+            uni.showToast({ title: "无法添加小组件", icon: "none" });
+        }
+    } catch (e) {
+        console.error("启动 LOGO 图标小组件添加失败:", e);
+        uni.showToast({
+            title: "无法添加小组件，请检查系统支持",
+            icon: "none"
+        });
+    }
+}
+
+/**
+ * 添加 TestWidget 测试小组件到桌面
+ * 仅支持 Android 7.1（API 25）及以上系统
+ * 自动检测是否已添加，支持系统固定流程
+ */
+export function addTestWidget() {
+    // 输出调试日志
+    console.warn("调用 addTestWidget")
+    // 检查系统版本，低于 7.1 直接返回
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+        console.log("桌面小组件仅支持 Android 7.1 以上版本")
+        return;
+    }
+    // 获取应用上下文
+    const context = UTSAndroid.getAppContext() as Context
+    // 获取 AppWidgetManager 实例
+    const appWidgetManager = AppWidgetManager.getInstance(context);
+    // 构造 TestWidget 小组件的 ComponentName
+    const myWidget = new ComponentName(context, "uts.sdk.modules.laoqianjunziWidget.TestWidget")
+    // 获取已添加的小组件 ID 列表
+    const appWidgetIds: IntArray = appWidgetManager.getAppWidgetIds(myWidget);
+    console.warn("当前已添加的 TestWidget 小组件 ID 列表:", appWidgetIds)
+
+    // 如果已添加，则提示并返回
+    if (appWidgetIds.isNotEmpty()) {
+        uni.showToast({
+            title: "好友电量已添加",
+            icon: "none"
+        });
+        return;
+    } else {
+        console.warn("桌面未检测到 TestWidget 组件")
+    }
+
+    // 检查系统是否支持桌面固定小组件
+    if (appWidgetManager.isRequestPinAppWidgetSupported()) {
+        console.warn("系统支持 requestPinAppWidget 固定流程")
+    }
+
+    // 尝试触发系统添加小组件流程
+    try {
+        const success = appWidgetManager.requestPinAppWidget(myWidget, null, null);
+        if (success) {
+            console.warn("已触发 TestWidget 小组件固定流程");
+        } else {
+            uni.showToast({ title: "无法添加小组件", icon: "none" });
+        }
+    } catch (e) {
+        console.error("启动 TestWidget 小组件添加失败:", e);
+        uni.showToast({
+            title: "无法添加小组件，请检查系统支持",
+            icon: "none"
+        });
+    }
+}

@@ -1,9 +1,11 @@
 <script>
 	const nauth = false;
-	const version = "1.0.0"
-	const version_number = 4
+	const version = "1.0.2"
+	const version_number = 5
 import {uniGet} from "./scripts/req";
-	// UXUI INIT
+	// #ifdef APP
+	import { getSwitchList, switchIcons, restoreIcons } from "@/uni_modules/ima-icons";
+	// #endif	// UXUI INIT
 	import {
 		loadDB
 	} from "@/scripts/sqlite.js";
@@ -77,6 +79,17 @@ import {uniGet} from "./scripts/req";
 				key: 'jqok',
 				data: false
 			});
+			if (uni.getStorageSync("nowIcon") === "girl"){
+				if (uni.getStorageSync("railgoGirlUnlock") == null || uni.getStorageSync("railgoGirlUnlock") == false){
+					uni.setStorage({
+						key: "nowIcon",
+						data: "crh"
+					})
+					// #ifdef APP
+					switchIcons("crh")
+					// #endif
+				}
+			}
 			if (value) {
 				uni.setStorage({
 					key: 'version',
