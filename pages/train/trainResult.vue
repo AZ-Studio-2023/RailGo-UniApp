@@ -68,11 +68,10 @@
 						<uni-th width="70">车次</uni-th>
 						<uni-th width="60">到达</uni-th>
 						<uni-th width="60">出发</uni-th>
-						<uni-th width="50">停车</uni-th>
 						<uni-th width="80">里程</uni-th>
 						<uni-th width="100">区间均速</uni-th>
 						<uni-th width="60">日期</uni-th>
-					</uni-tr>
+						</uni-tr>
 					<uni-tr v-for="(item,index) in (carData.timetable || [])" :key="index" style="border:none"
 						hover-class="ux-bg-grey5">
 						<uni-td style="border:none">
@@ -88,15 +87,22 @@
 						<uni-td style="border:none">{{item.trainCode || ''}}</uni-td>
 						<uni-td style="border:none">{{item.arrive || ''}}</uni-td>
 						<uni-td style="border:none">{{item.depart || ''}}</uni-td>
-						<uni-td style="border:none">{{item.stopTime || '-'}}'</uni-td>
 						<uni-td style="border:none">{{item.distance || '0'}} km</uni-td>
 						<uni-td style="border:none">{{item.speed ? item.speed.toFixed(1) : '-'}} km/h</uni-td>
 						<uni-td style="border:none">{{item.day || '当'}}日</uni-td>
-					</uni-tr>
+						</uni-tr>
 				</uni-table>
 
 				<uni-section title="正晚点" type="line" style="background-color: transparent;"
 					title-font-size="28rpx"></uni-section>
+
+				<view v-if="showLoadAllButton" class="ux-pb-small">
+					<button @click="loadAllPlatforms" type="primary" size="mini"
+						style="margin: 0; padding: 0 15px; font-size: 14px; line-height: 30px;">
+						一键全部加载停台信息 (共{{carData.timetable.length}}站)
+					</button>
+				</view>
+
 				<uni-table style="border:none">
 					<uni-tr style="border:none">
 						<uni-th style="border:none" align="center">车站</uni-th>
@@ -105,30 +111,50 @@
 						<uni-th style="border:none" align="center">实际到达<br>发车</uni-th>
 						<uni-th style="border:none" align="center">停站</uni-th>
 						<uni-th style="border:none" align="center">日期</uni-th>
+						<uni-th style="border:none" width="60" align="center">停台</uni-th>
+						<uni-th style="border:none" width="80" align="center">检票口</uni-th>
 					</uni-tr>
-					<uni-tr v-for="(item,index) in delay" :key="index" style="border:none" hover-class="ux-bg-grey5">
+					<uni-tr v-for="(item,index) in combinedDelayData" :key="index" style="border:none" hover-class="ux-bg-grey5">
 						<uni-td style="border:none" align="center">
 							<view class="ux-flex ux-align-items-center ux-justify-content-center">
 								<text>{{item.stationName || ''}}</text>
 							</view>
 						</uni-td>
-						<uni-td style="border:none" align="center" :style="getDelayStatusColor(item.delayMinutes, item.status)">
+						<uni-td style="border:none" align="center"
+							:style="getDelayStatusColor(item.delayMinutes, item.status)">
 							{{formatDelayStatus(item.delayMinutes, item.status)}}
 						</uni-td>
-						<uni-td style="border:none" align="center">{{item.arrivalTime || '-'}}<br>{{item.departureTime || '-'}}</uni-td>
+						<uni-td style="border:none" align="center">{{item.arrivalTime || '-'}}<br>{{item.departureTime ||
+							'-'}}</uni-td>
 						<uni-td style="border:none" align="center">
 							{{calculateActualTime(item.arrivalTime, item.delayMinutes, item.status)}}
 							<br>
 							{{calculateActualTime(item.departureTime, item.delayMinutes, item.status)}}
 						</uni-td>
-						<uni-td style="border:none" align="center">{{item.stopMinutes === null || item.stopMinutes === undefined ? '-' : item.stopMinutes + "'"}}</uni-td>
+						<uni-td style="border:none" align="center">{{item.stopMinutes === null || item.stopMinutes ===
+							undefined ? '-' : item.stopMinutes + "'"}}</uni-td>
 						<uni-td style="border:none" align="center">{{item.arrivalDate || ''}}</uni-td>
+						
+						<uni-td style="border:none" align="center">
+							<view v-if="item.platform">{{item.platform}}</view>
+							<button v-else-if="item.platform === null && showLoadAllButton" 
+								@click="loadPlatformByStationName(item.stationName)" 
+								size="mini" type="primary" 
+								style="margin: 0; padding: 0 5px; font-size: 10px; line-height: 20px;">
+								查询
+							</button>
+							<view v-else>-</view>
+						</uni-td>
+						<uni-td style="border:none" align="center">
+							<view v-if="item.wicket">{{item.wicket}}</view>
+							<view v-else>-</view>
+						</uni-td>
 					</uni-tr>
 					<uni-tr v-if="delay.length === 0" style="border:none">
-						<uni-td style="border:none" colspan="6" align="center"  v-if="isOnlyOfflineMode == false">
-							暂无正晚点信息或加载失败
+						<uni-td style="border:none" colspan="8" align="center" v-if="isOnlyOfflineMode == false"> 暂无正晚点信息或加载失败
 						</uni-td>
-						<uni-td style="border:none" colspan="6" align="center" class="ux-color-gray" v-if="isOnlyOfflineMode">
+						<uni-td style="border:none" colspan="8" align="center" class="ux-color-gray"
+							v-if="isOnlyOfflineMode">
 							仅离线模式下无法使用该功能
 						</uni-td>
 					</uni-tr>
@@ -204,10 +230,7 @@
 								</view>
 							</view>
 							<view class="ux-mt-small">
-								<image v-if="carImageUrl"
-									:src="carImageUrl" 
-									@error="onImageError"
-									mode="aspectFit"
+								<image v-if="carImageUrl" :src="carImageUrl" @error="onImageError" mode="aspectFit"
 									style="max-width:350rpx; height: 200rpx;overflow: hidden; border-radius: 500rpx;"></image>
 							</view>
 						</view>
@@ -267,9 +290,9 @@
 						<text>&nbsp;当日开行</text>
 					</view>
 				</view>
-				
+
 			</view>
-			
+
 			<view class="ux-padding ux-text-center" v-if="selectIndex==2">
 				<text>暂未开放，敬请期待</text>
 			</view>
@@ -315,7 +338,7 @@
 					numberKind: '',
 					numberFull: [],
 					type: '',
-					timetable: [],
+					timetable: [], // 停台/检票口数据仍存储在这里
 					bureauName: '',
 					runner: '',
 					carOwner: '',
@@ -325,7 +348,7 @@
 				},
 				"colorMap": TRAIN_KIND_COLOR_MAP,
 				"carMap": CAR_PERFORMANCE,
-				"delay": [],
+				"delay": [], // 正晚点数据
 				"title": '',
 				"date": "",
 				"train": "",
@@ -340,17 +363,64 @@
 				}],
 				"selectIndex": 0,
 				"isOnlyOfflineMode": false,
-				"carImageUrl": "" // 新增：当前显示的动车组图片 URL
+				"carImageUrl": "", 
+				
+				// 停台加载逻辑相关状态
+				"platformLoadThreshold": 10, 
+				"allPlatformWicketLoaded": false, 
+				"showLoadAllButton": false, 
+			}
+		},
+		computed: {
+			/**
+			 * 结合正晚点数据 (this.delay) 和停台/检票口数据 (this.carData.timetable)
+			 * 以便在正晚点表格中同时展示。
+			 */
+			combinedDelayData() {
+				if (!this.delay || this.delay.length === 0) {
+					return this.delay;
+				}
+
+				const timetableMap = new Map();
+				// 建立车站名到停台/检票口信息的映射
+				this.carData.timetable.forEach((item, index) => {
+					timetableMap.set(item.station, {
+						platform: item.platform,
+						wicket: item.wicket,
+						// 存储索引，用于单点查询时定位
+						index: index, 
+					});
+				});
+
+				// 合并数据
+				return this.delay.map(delayItem => {
+					const platformWicketInfo = timetableMap.get(delayItem.stationName);
+					if (platformWicketInfo) {
+						return {
+							...delayItem,
+							platform: platformWicketInfo.platform,
+							wicket: platformWicketInfo.wicket,
+							// 携带索引以便于单点查询
+							_index: platformWicketInfo.index
+						};
+					}
+					// 即使找不到匹配，也返回原始 delayItem，但停台/检票口字段为 null
+					return {
+						...delayItem,
+						platform: null,
+						wicket: null,
+						_index: -1 
+					};
+				});
 			}
 		},
 		onLoad(options) {
-			this.train = options.keyword ? options.keyword.split("/")[0] : '';
-			this.keyword = options.keyword;
+			this.train = options.keyword ? options.keyword.split("/")[0].toUpperCase() : '';
+			this.keyword = options.keyword ? options.keyword.toUpperCase() : '';
 			this.title = this.train;
 			this.date = options.date || '';
 
 			const mode = uni.getStorageSync("mode");
-			// 新增：检查 'ol' 状态
 			this.isOnlyOfflineMode = uni.getStorageSync("ol") === true;
 
 			const c = uni.getStorageSync("search");
@@ -370,49 +440,193 @@
 				uni.navigateBack()
 			},
 			/**
+			 * 根据车站名触发单个停台查询（用于正晚点表中的“查询”按钮）
+			 * @param {string} stationName 车站名称
+			 */
+			loadPlatformByStationName: function(stationName) {
+				// 在 carData.timetable 中找到对应的原始数据和索引
+				const targetIndex = this.carData.timetable.findIndex(item => item.station === stationName);
+				const targetItem = this.carData.timetable[targetIndex];
+				
+				if (targetItem && targetIndex !== -1) {
+					// 调用核心加载逻辑
+					this.loadPlatform(targetItem, targetIndex, false);
+				} else {
+					uni.showToast({
+						title: '无法匹配车站信息',
+						icon: 'error'
+					});
+				}
+			},
+			/**
+			 * 停台查询方法 (单个车站)
+			 * @param {object} item 时刻表行数据 (carData.timetable中的元素)
+			 * @param {number} index 时刻表行索引
+			 * @param {boolean} silent 是否不显示 Toast 提示 (用于批量加载)
+			 */
+			async loadPlatform(item, index, silent = false) {
+				if (!item.stationTelecode || !this.date || !item.trainCode) {
+					if (!silent) {
+						uni.showToast({
+							title: '缺少查询参数',
+							icon: 'none'
+						});
+					}
+					return { success: false };
+				}
+
+				if (!silent) {
+					uni.showLoading({
+						title: '获取停台数据'
+					});
+				}
+
+				// 确定 type 参数：始发站（第一个站，index=0）使用 'D'，其余使用 'A'
+				const requestType = index === 0 ? 'D' : 'A';
+				let result = { success: false, platform: '查询失败', wicket: '查询失败' };
+
+				try {
+					const currentItem = this.carData.timetable[index]; 
+					
+					const response = await uniPost(
+						'https://mobile.12306.cn/wxxcx/wechat/bigScreen/getExit',
+						{
+							stationCode: item.stationTelecode,
+							trainDate: this.date, 
+							type: requestType, 
+							stationTrainCode: item.trainCode 
+						}
+					);
+
+					if (response.data && response.data.status === true && response.data.data) {
+						result.success = true;
+						result.platform = response.data.data.platform || '未知';
+						result.wicket = response.data.data.wicket || '未知';
+						
+						// Success: Update the timetable item (which feeds the computed property)
+						this.$set(this.carData.timetable, index, {
+							...currentItem,
+							platform: result.platform,
+							wicket: result.wicket
+						});
+						
+						if (!silent) {
+							uni.showToast({
+								title: '获取成功',
+								icon: 'success'
+							});
+						}
+					} else {
+						// Failure 
+						if (!silent) {
+							uni.showToast({
+								title: response.data.errorMsg || '查询失败',
+								icon: 'error'
+							});
+						}
+						this.$set(this.carData.timetable, index, {
+							...currentItem,
+							platform: '查询失败',
+							wicket: '查询失败'
+						});
+					}
+				} catch (error) {
+					console.error("查询停台数据出错:", error);
+					if (!silent) {
+						uni.showToast({
+							title: '网络请求失败',
+							icon: 'error'
+						});
+					}
+					const currentItem = this.carData.timetable[index];
+					this.$set(this.carData.timetable, index, {
+						...currentItem,
+						platform: '网络错误',
+						wicket: '网络错误'
+					});
+				} finally {
+					if (!silent) {
+						uni.hideLoading();
+					}
+					return result;
+				}
+			},
+
+			/**
+			 * 批量加载所有车站的停台信息
+			 */
+			async loadAllPlatforms() {
+				if (this.allPlatformWicketLoaded) return;
+				
+				uni.showLoading({ title: '一键加载中...' });
+				
+				let successCount = 0;
+				let totalCount = this.carData.timetable.length;
+				
+				try {
+					for (let i = 0; i < this.carData.timetable.length; i++) {
+						const item = this.carData.timetable[i];
+						// 检查是否已经查询过，避免重复请求
+						if (item.platform === null || item.platform === '查询失败' || item.platform === '网络错误') {
+							// 使用 silent 模式进行加载
+							const result = await this.loadPlatform(item, i, true); 
+							if (result.success) {
+								successCount++;
+							}
+						} else if (item.platform) {
+							// 已经有数据了，也算成功
+							successCount++;
+						}
+					}
+					
+					this.allPlatformWicketLoaded = true;
+					this.showLoadAllButton = false;
+					
+					uni.showToast({
+						title: `加载完成！成功${successCount} / ${totalCount}站`,
+						icon: 'success',
+						duration: 2000
+					});
+					
+				} catch (e) {
+					uni.showToast({
+						title: '批量加载出错',
+						icon: 'error'
+					});
+				} finally {
+					uni.hideLoading();
+				}
+			},
+
+			/**
 			 * 计算实际到达/发车时间 (HH:mm)
-			 * @param {string|null} estimatedTime 预计时间，格式 "HH:mm"
-			 * @param {number|null} delayMinutes 晚点分钟数 (负数为早点)
-			 * @param {number|null} status 状态码 (1: 正点, 2: 晚点, 3: 早点)
-			 * @returns {string} 实际时间或 '-'
 			 */
 			calculateActualTime: function(estimatedTime, delayMinutes, status) {
-				// 1. 如果预计时间为 null/empty 或状态为 null/undefined，则为 "-"
 				if (!estimatedTime || estimatedTime === '-' || status === null || status === undefined) {
 					return '-';
 				}
-
-				// 2. 如果 delayMinutes 不是一个有效的数字，无法计算，返回 "-"
 				if (typeof delayMinutes !== 'number' || isNaN(delayMinutes) || delayMinutes === null) {
 					return '-';
 				}
-
-				// 3. 如果 status 为 1 且 delayMinutes 为 0，则为预计时间 (正点)
 				if (status === 1 && delayMinutes === 0) {
 					return estimatedTime;
 				}
 
-				// 时间计算逻辑: "HH:mm" + delayMinutes
 				const parts = estimatedTime.split(':');
 				let hours = parseInt(parts[0]);
 				let minutes = parseInt(parts[1]);
 
-				// 计算从一天开始的总分钟数 + 延迟分钟数
 				let totalMinutes = hours * 60 + minutes + delayMinutes;
 
-				// 处理时间环绕 (e.g., 23:50 + 20min = 00:10, 00:05 - 10min = 23:55)
 				const minutesInDay = 24 * 60;
-
-				// 使用取模运算获取最终分钟数，并处理负数结果
 				let finalMinutes = totalMinutes % minutesInDay;
 				if (finalMinutes < 0) {
-					finalMinutes += minutesInDay; // 确保结果在 0 到 1439 之间
+					finalMinutes += minutesInDay; 
 				}
 
 				let finalHours = Math.floor(finalMinutes / 60);
 				let finalMin = finalMinutes % 60;
 
-				// 格式化为 "HH:mm"
 				const formattedHours = String(finalHours).padStart(2, '0');
 				const formattedMinutes = String(finalMin).padStart(2, '0');
 
@@ -421,86 +635,63 @@
 
 			/**
 			 * 根据状态判断并返回状态文本
-			 * @param {number|null} delayMinutes 晚点分钟数 (负数为早点)
-			 * @param {number|null} status 状态码 (1: 正点, 2: 晚点, 3: 早点)
-			 * @returns {string} 状态文本或 '-'
 			 */
 			formatDelayStatus: function(delayMinutes, status) {
-				// 1. 如果 delayMinutes 或 status 为 null/undefined，则为 "-"
 				if (delayMinutes === null || status === null || delayMinutes === undefined || status === undefined) {
 					return '-';
 				}
-
-				// 2. 如果 status 为 1 且 delayMinutes 为 0，则为 "正点"
 				if (status === 1 && delayMinutes === 0) {
 					return '正点';
 				}
-
-				// 3. 如果 status 为 3 且 delayMinutes 为负数，则为 "早点{|delayMinutes|}分" (绿色)
 				if (status === 3 && delayMinutes < 0) {
 					return `早点${Math.abs(delayMinutes)}分`;
 				}
-
-				// 4. 如果 status 为 2 且 delayMinutes 为正数，则为 "晚点{|delayMinutes|}分" (红色)
 				if (status === 2 && delayMinutes > 0) {
 					return `晚点${delayMinutes}分`;
 				}
-
-				// Fallback
 				return '-';
 			},
 
 			/**
 			 * 根据状态返回对应的 CSS 颜色
-			 * @param {number|null} delayMinutes 晚点分钟数
-			 * @param {number|null} status 状态码
-			 * @returns {string} CSS 颜色字符串 (e.g., 'color: #c0392b;')
 			 */
 			getDelayStatusColor: function(delayMinutes, status) {
-				// 早点：绿色
 				if (status === 3 && delayMinutes < 0) {
 					return 'color: #27ae60; font-weight: bold;';
 				}
-				// 晚点：红色
 				if (status === 2 && delayMinutes > 0) {
 					return 'color: #c0392b; font-weight: bold;';
 				}
-				// 默认（正点或未知）：无特定颜色
 				return '';
 			},
-			
+
 			/**
 			 * 图片加载失败时的处理函数，实现 Fallback 逻辑
 			 */
 			onImageError: function(e) {
 				const primaryUrlPrefix = 'https://tp.railgo.zenglingkun.cn/api/';
-				
-				// 1. 检查是否正在尝试加载在线 API URL
+
 				if (this.carImageUrl && this.carImageUrl.startsWith(primaryUrlPrefix)) {
 					const carModel = this.carData.car ? this.carData.car.replace(' 重联', '') : null;
-					
-					// 2. 检查本地 carMap 是否存在 Fallback URL
+
 					if (carModel && this.carMap[carModel] && this.carMap[carModel][4]) {
-						// 切换到本地 carMap 中的 URL (Fallback)
 						this.carImageUrl = this.carMap[carModel][4];
 						console.warn(`Image load failed for primary URL. Falling back to: ${this.carImageUrl}`);
 					} else {
-						// 没有本地 fallback URL，清除图片
 						this.carImageUrl = '';
 					}
 				} else {
-					// 3. 如果是本地 fallback URL 加载失败，则清除图片，停止尝试
 					this.carImageUrl = '';
 					console.error(`Image load failed for fallback URL. Image removed.`);
 				}
 			},
 
 			fillInData: async function(mode) {
-				
+
 				uni.showLoading({
 					title: "加载中"
-				});
-				let loadSuccess = false; // 标记 carData 是否成功加载
+				}); // [1] 主数据加载开始
+				let loadSuccess = false; 
 
 				try {
 					if (!this.train) return;
@@ -512,18 +703,7 @@
 						const result = resp.data;
 
 						if (result.error || !result.timetable || result.timetable.length === 0) {
-							this.carData = {
-								numberKind: '',
-								numberFull: [],
-								type: '',
-								timetable: [],
-								bureauName: '',
-								runner: '',
-								carOwner: '',
-								car: '',
-								rundays: [],
-								diagram: []
-							};
+							this.carData = { /* ... reset data ... */ };
 							this.cardColor = '#114598';
 							uni.showToast({
 								title: '车次不存在',
@@ -545,17 +725,17 @@
 							numberKind: result.numberKind || '',
 							numberFull: Array.isArray(result.numberFull) ? result.numberFull : [],
 							type: result.type || '',
-							// 预处理 timetable，确保安全
 							timetable: (result.timetable || []).map(item => ({
 								station: '',
 								stationTelecode: '',
 								trainCode: '',
 								arrive: '',
 								depart: '',
-								stopTime: '-',
 								distance: '-',
 								speed: 0,
 								day: '-',
+								platform: null, 
+								wicket: null, 
 								...item
 							})),
 							bureauName: result.bureauName || '',
@@ -566,7 +746,7 @@
 							diagram: Array.isArray(result.diagram) ? result.diagram : []
 						};
 						this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
-						loadSuccess = true; // 标记成功
+						loadSuccess = true; 
 
 					} else {
 						// --- 本地模式逻辑：获取车次详情 ---
@@ -601,28 +781,18 @@
 								trainCode: '',
 								arrive: '',
 								depart: '',
-								stopTime: '-',
 								distance: '-',
 								speed: 0,
 								day: '-',
+								platform: null, 
+								wicket: null, 
 								...item
 							}));
 							this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
-							loadSuccess = true; 
+							loadSuccess = true;
 
 						} else {
-							this.carData = {
-								numberKind: '',
-								numberFull: [],
-								type: '',
-								timetable: [],
-								bureauName: '',
-								runner: '',
-								carOwner: '',
-								car: '',
-								rundays: [],
-								diagram: []
-							};
+							this.carData = { /* ... reset data ... */ };
 							this.cardColor = '#114598';
 							uni.showToast({
 								title: '车次不存在',
@@ -636,36 +806,38 @@
 							uni.redirectTo({
 								url: '/pages/404/404'
 							})
-							return; 
+							return;
 						}
 					}
-					
+
 					// -------------------------------------------------------------------------
 					// **图片 URL 初始化逻辑**
 					const carModel = this.carData.car ? this.carData.car.replace(' 重联', '') : null;
 					if (carModel) {
-						// 1. 设置主 URL (在线 API)
 						this.carImageUrl = `https://tp.railgo.zenglingkun.cn/api/${encodeURIComponent(carModel)}.png`;
 					} else {
 						this.carImageUrl = '';
 					}
 					// -------------------------------------------------------------------------
-					
-					if (this.isOnlyOfflineMode){
-						uni.hideLoading()
+
+					if (this.isOnlyOfflineMode) {
+						// 离线模式下，主数据已加载完毕，直接返回
 						return
 					}
-					uni.hideLoading()
+					
+					// -------------------------------------------------------------------------
+					// **正晚点数据加载逻辑**
+					let delayLoadSuccess = false;
 					if (loadSuccess && this.carData.timetable.length > 0) {
 						const timetable = this.carData.timetable;
 						const fromStation = timetable[0].station;
 						const toStation = timetable[timetable.length - 1].station;
 
 						if (fromStation && toStation && this.date) {
+							uni.showLoading({
+								title: '加载正晚点数据'
+							}) // [2] 正晚点加载开始
 							try {
-								uni.showLoading({
-									title: '加载正晚点数据'
-								})
 								const delayResp = await uniPost(
 									'https://delay.data.railgo.zenglingkun.cn/api/trainDetails/queryTrainDelayDetails', {
 										date: this.date,
@@ -676,17 +848,33 @@
 								);
 								if (delayResp.data && Array.isArray(delayResp.data.data)) {
 									this.delay = delayResp.data.data;
+									delayLoadSuccess = true;
 								} else {
 									this.delay = [];
 								}
 							} catch (delayError) {
 								console.warn("获取正晚点信息失败（网络可能断开或接口错误）", delayError);
 								this.delay = []; 
+							} finally {
+								uni.hideLoading() // [2] 正晚点加载结束 (确保隐藏)
 							}
-							uni.hideLoading()
 						}
 					}
 					// -------------------------------------------------------------------------
+					
+					// -------------------------------------------------------------------------
+					// **停台自动/手动加载逻辑**
+					if (loadSuccess && this.carData.timetable.length > 0) {
+						if (this.carData.timetable.length < this.platformLoadThreshold) {
+							// 车站少于阈值，自动加载所有停台信息
+							this.loadAllPlatforms();
+						} else {
+							// 车站多于阈值，显示一键加载按钮
+							this.showLoadAllButton = true;
+						}
+					}
+					// -------------------------------------------------------------------------
+
 
 				} catch (error) {
 					console.error("数据加载失败", error);
@@ -710,7 +898,8 @@
 						data: c - 1
 					});
 				} finally {
-					uni.hideLoading();
+					// [1] 主数据加载结束：无论成功、失败或提前返回（离线模式），都确保隐藏最初的“加载中”动画
+					uni.hideLoading(); 
 				}
 			},
 			tabChange: function(e) {
