@@ -1,6 +1,5 @@
 <template>
 	<view class="ux-bg-grey5" style="min-height:100vh;">
-		<!-- headers begin -->
 		<view class="ux-bg-primary" style="height:  var(--status-bar-height);">&nbsp;</view>
 
 		<view class="ux-pl ux-pr ux-pt">
@@ -10,7 +9,6 @@
 			<br>
 			<text class="ux-h2">车次查询</text>
 		</view>
-		<!-- headers end -->
 		<view class="ux-pl ux-pr ux-pb">
 			<view class="ux-flex ux-justify-content-center">
 				<uv-tabs :list="topTabList" lineWidth="60" lineColor="#114598" :activeStyle="{
@@ -47,11 +45,7 @@
 											{{item.numberFull.join("/")}}
 										</view>
 									</view>
-<!-- 									<view class="ux-opacity-5 ux-text-small">
-										{{item.timetable[0].station}} ⋙
-										{{item.timetable[item.timetable.length-1].station}}
-									</view> -->
-								</view>
+</view>
 							</scroll-view>
 						</view>
 					</view>
@@ -90,14 +84,21 @@
 							</navigator>
 						</view>
 					</view>
-				</view>
+					</view>
 			</view>
+			
 			<text class="ux-h6">日期</text>
 			<view class="ux-bg-white ux-border-radius-small ux-mb-small ux-mt-small">
 				<uni-datetime-picker type="date" v-model="today" start="2007-04-18" end="2099-01-01"
 					@change="inputDate" />
 			</view>
-			<br>
+			
+			<view v-if="selectIndex==1" class="ux-flex ux-align-items-center ux-mb-small">
+				<switch class="ux-pb-small" color="#114598" style="transform:scale(0.7);margin-left:-1vh;"
+					@change="vague" :checked="isVague"/>
+				<text class="va">查询同城车站</text>
+			</view>
+			<br v-if="selectIndex==0">
 			<button type="primary" style="background-color:#114598;color:#ffffff;" hover-class="ux-tap"
 				@click="jumpToResult()">查询</button>
 			<br>
@@ -130,7 +131,9 @@
 	import {
 		TRAIN_KIND_COLOR_MAP
 	} from "@/scripts/config.js";
-import {uniGet} from "../../scripts/req";
+	import {
+		uniGet
+	} from "../../scripts/req";
 	export default {
 		data() {
 			return {
@@ -147,7 +150,8 @@ import {uniGet} from "../../scripts/req";
 				}],
 				"selectIndex": 0,
 				"stsSelectionA": "",
-				"stsSelectionB": ""
+				"stsSelectionB": "",
+				"isVague": false 
 			}
 		},
 		onShow() {
@@ -156,14 +160,23 @@ import {uniGet} from "../../scripts/req";
 			if (!selectionA || !selectionB) {
 				uni.setStorageSync("train_sts_fieldA", {
 					name: "北京",
-					telecode: "BJP"
-				});
+					telecode: "BJP",
+					city: "北京"
+				}); // 增加city字段初始化
 				uni.setStorageSync("train_sts_fieldB", {
 					name: "上海",
-					telecode: "SHH"
-				});
+					telecode: "SHH",
+					city: "上海"
+				}); // 增加city字段初始化
 				this.stsSelectionA = "北京";
-				this.stsSelectionA = "上海";
+				this.stsSelectionB = "上海";
+			} else {
+				if(!selectionA.city || !selectionB.city) {
+					selectionA.city = selectionA.city || selectionA.name; 
+					selectionB.city = selectionB.city || selectionB.name;
+					uni.setStorageSync("train_sts_fieldA", selectionA);
+					uni.setStorageSync("train_sts_fieldB", selectionB);
+				}
 			}
 			this.stsSelectionA = selectionA.name;
 			this.stsSelectionB = selectionB.name;
@@ -185,9 +198,15 @@ import {uniGet} from "../../scripts/req";
 						url: "/pages/train/trainResult?keyword=" + this.keyword + "&date=" + this.date
 					});
 				} else {
+					let url = "/pages/train/stsResult?from=" + uni.getStorageSync("train_sts_fieldA").telecode +
+						"&to=" + uni.getStorageSync("train_sts_fieldB").telecode + "&date=" + this.date;
+
+					if (this.isVague) {
+						url += "&city=true";
+					}
+
 					uni.navigateTo({
-						url: "/pages/train/stsResult?from=" + uni.getStorageSync("train_sts_fieldA").telecode +
-							"&to=" + uni.getStorageSync("train_sts_fieldB").telecode + "&date=" + this.date
+						url: url
 					});
 				}
 			},
@@ -227,7 +246,6 @@ import {uniGet} from "../../scripts/req";
 				}
 			},
 			inputDate: function(e) {
-				// replace不用RegExp只会替换一次
 				this.date = e.replace("-", "").replace("-", "");
 			},
 			shouldShowPlacehold: function() {
@@ -247,11 +265,13 @@ import {uniGet} from "../../scripts/req";
 			},
 			tabChange: function(e) {
 				this.selectIndex = e.index;
+			},
+			vague: function(e) {
+				this.isVague = e.detail.value;
 			}
 		}
 	}
 </script>
 
 <style>
-
 </style>

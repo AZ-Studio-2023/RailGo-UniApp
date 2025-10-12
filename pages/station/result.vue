@@ -18,6 +18,16 @@
 					</view>
 					<view>
 						<text class="ux-h3">{{data.name}}站</text><br>
+						<text v-if="data.province || (data.level && data.level !== '未知')" class="ux-text-small ux-opacity-7">
+							<template v-if="data.province">
+								{{ data.province === data.city ? data.province : (data.province + (data.city || '')) }}
+							</template>
+							
+							<template v-if="data.province && data.level && data.level !== '未知'"> | </template>
+							
+							<template v-if="data.level && data.level !== '未知'">{{data.level}}</template>
+							<br>
+						</text>
 						<text class="ux-text-small">{{data.pinyin}} Station</text>
 					</view>
 				</view>
@@ -240,7 +250,8 @@
 			</view>
 		</view>
 	</uni-popup>
-    </view> </template>
+    </view>
+</template>
 
 <script>
 	import {

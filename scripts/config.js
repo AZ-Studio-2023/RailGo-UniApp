@@ -100,5 +100,5 @@ export const KEYS_STRUCT_TRAINS = ["code", "number", "numberFull", "numberKind",
 ]
 
 export const KEYS_STRUCT_STATIONS = ["telecode", "pinyin", "pinyinTriple", "tmism", "name", "bureau", "belong", "lines",
-	"type", "trainList"
+	"type", "trainList", "level", "city", "province"
 ]
