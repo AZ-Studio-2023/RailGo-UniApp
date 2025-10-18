@@ -48,6 +48,7 @@
 						<text class="ux-text-small ux-color-grey1"><text class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
+				<!-- #ifdef APP-ANDROID -->
 				<navigator url="/pages/about/individuation"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -56,6 +57,8 @@
 								class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
+				<!-- #endif -->
+				<!-- #ifdef APP -->
 				<navigator url="/pages/about/mode"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -63,7 +66,8 @@
 						<text class="ux-text-right ux-text-small ux-color-grey1"><text
 								class="icon">&#xe5c8;</text></text>
 					</view>
-				</navigator>
+				</navigator>				
+				<!-- #endif -->
 				<view @click="resetOobe"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -87,6 +91,7 @@
 								class="icon">&#xe5c8;</text></text>
 					</view>
 				</navigator>
+				<!-- #ifdef APP -->
 				<navigator url="/pages/update/db"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">
@@ -94,7 +99,8 @@
 						<text class="ux-text-right ux-text-small ux-color-grey1"><text
 								class="icon">&#xe5c8;</text></text>
 					</view>
-				</navigator>
+				</navigator>				
+				<!-- #endif -->
 				<navigator v-if="count >= 10" url="/pages/about/egg"
 					class="ux-th ux-bg-white ux-border-radius-large ux-padding ux-mt-small">
 					<view class="ux-flex ux-space-between">

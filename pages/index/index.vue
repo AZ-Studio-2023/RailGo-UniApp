@@ -133,7 +133,7 @@
 			return
 		}
 		try {
-			const Response = await uniGet("https://auth.railgo.zenglingkun.cn/api/check/" + uni.getStorageSync(
+			const Response = await uniGet("https://center.zenglingkun.cn/beta/api/check/" + uni.getStorageSync(
 				'version') + "?userid=" + uni.getStorageSync('qq') + "&key=" + uni.getStorageSync('key'));
 			if (Response.data.valid) {
 				uni.setStorageSync("AuthTime", new Date().getTime())

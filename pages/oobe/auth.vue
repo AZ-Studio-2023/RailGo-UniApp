@@ -12,7 +12,7 @@
 						<text class="ux-h6">因此，本版本不应当用于日常使用。若您不想使用未完成的内容，则请重新下载正式版。</text><br><br>
 						<text class="ux-h6 ux-bold">本品品质无保障，请慎重使用。</text><br><br>
 						<text class=" ux-h6">为避免出现不可预料的后果，需要进行鉴权。</text><br><br>
-						<text class=" ux-h6">公测码免费获取，如有售卖情况，请向我们举报。</text><br><br>
+						<text class=" ux-h6 ux-bold">公测码可在RailGo Center免费获取，如有售卖情况，请向我们举报。</text><br><br>
 						
 						<view class="ux-flex" style="align-items: center; margin-bottom: 10px;">
 						  <text style="width: 80px; text-align: right;" class="">公测码：</text>
@@ -65,7 +65,7 @@ import {uniGet} from "@/scripts/req.js";
 				}
 				this.load=true;
 				try {
-					const Response = await uniGet("https://auth.railgo.zenglingkun.cn/api/check/" + this.ver + "?userid=" + this.qq + "&key=" + this.code);
+					const Response = await uniGet("https://center.zenglingkun.cn/beta/api/check/" + this.ver + "?userid=" + this.qq + "&key=" + this.code);
 					this.valid = Response.data.valid;
 					if (this.valid) {
 						uni.setStorageSync("qq", this.qq)

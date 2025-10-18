@@ -199,9 +199,8 @@
 				"colorMap": TRAIN_KIND_COLOR_MAP,
 				"sortState": "departure",
 				"filterTypeState": "GDCZTK12345678SLY",
-				"isVague": false, // 新增：是否为同城查询
-				"fromCity": "", // 新增：出发城市
-				"toCity": "" // 新增：到达城市
+				"isVague": false, // 是否为同城查询
+				// 移除了 fromCity 和 toCity 属性，不再依赖 train_sts_fieldA/B
 			}
 		},
 		async onLoad(options) {
@@ -218,15 +217,7 @@
 				data: c + 1
 			});
 
-			// 在查询前获取城市信息（用于本地查询）
-			try {
-				let selectionA = uni.getStorageSync("train_sts_fieldA");
-				let selectionB = uni.getStorageSync("train_sts_fieldB");
-				this.fromCity = selectionA ? selectionA.city : '';
-				this.toCity = selectionB ? selectionB.city : '';
-			} catch (e) {
-				console.error("获取城市信息失败", e);
-			}
+			// 已移除：在查询前获取城市信息（用于本地查询），现在直接在 fillInData 中使用 URL telecode 查询 DB 获得城市信息。
 
 			try {
 				await this.fillInData();
@@ -329,7 +320,6 @@
 						});
 					}
 				} else {
-					// --- 本地模式逻辑 ---
 					try {
 						uni.showLoading({
 							title: "加载中"
@@ -337,33 +327,50 @@
 
 						let fromTelecodes = [this.from];
 						let toTelecodes = [this.to];
+						var commonTrainList = [];
+						let fallbackToPointToPoint = true; // 默认使用点对点
 
-						if (this.isVague && this.fromCity && this.toCity && this.fromCity !== this.toCity) {
-							// 步骤1: 查询出发城市和到达城市的所有车站 telecode
-							const fromStns = toRaw(await doQuery(
-								`SELECT telecode, trainList, name FROM stations WHERE city='${this.fromCity}' AND trainList IS NOT NULL`,
-								["telecode", "trainList", "name"]
-							));
-							const toStns = toRaw(await doQuery(
-								`SELECT telecode, trainList, name FROM stations WHERE city='${this.toCity}' AND trainList IS NOT NULL`,
-								["telecode", "trainList", "name"]
-							));
+						if (this.isVague) {
+							// 步骤 1.1: 使用URL传入的telecode查询其city
+							const fromStnInfo = toRaw(await doQuery(
+								`SELECT city FROM stations WHERE telecode='${this.from}'`, ["city"]
+							))[0];
+							const toStnInfo = toRaw(await doQuery(
+								`SELECT city FROM stations WHERE telecode='${this.to}'`, ["city"]
+							))[0];
 							
-							fromTelecodes = fromStns.map(stn => stn.telecode);
-							toTelecodes = toStns.map(stn => stn.telecode);
+							const fromCity = fromStnInfo ? fromStnInfo.city : null;
+							const toCity = toStnInfo ? toStnInfo.city : null;
 							
-							// 合并所有 trainList 以找出公共列车
-							let allFromTrainList = [];
-							fromStns.forEach(stn => allFromTrainList.push(...stn.trainList));
-							let allToTrainList = [];
-							toStns.forEach(stn => allToTrainList.push(...stn.trainList));
-							
-							// 找出公共列车号
-							let commonTrainSet = new Set(allFromTrainList.filter(train => allToTrainList.includes(train)));
-							var commonTrainList = Array.from(commonTrainSet);
-							
-						} else {
-							// 点对点查询（原逻辑）
+							// 确保找到城市信息且城市不同，才进行城市对城市查询
+							if (fromCity && toCity && fromCity !== toCity) {
+								// 步骤 1.2: 城市对城市查询
+								const fromStns = toRaw(await doQuery(
+									`SELECT telecode, trainList FROM stations WHERE city='${fromCity}' AND trainList IS NOT NULL`,
+									["telecode", "trainList"]
+								));
+								const toStns = toRaw(await doQuery(
+									`SELECT telecode, trainList FROM stations WHERE city='${toCity}' AND trainList IS NOT NULL`,
+									["telecode", "trainList"]
+								));
+								
+								fromTelecodes = fromStns.map(stn => stn.telecode);
+								toTelecodes = toStns.map(stn => stn.telecode);
+								
+								// 合并所有 trainList 以找出公共列车
+								let allFromTrainList = [];
+								fromStns.forEach(stn => allFromTrainList.push(...stn.trainList));
+								let allToTrainList = [];
+								toStns.forEach(stn => allToTrainList.push(...stn.trainList));
+								
+								let commonTrainSet = new Set(allFromTrainList.filter(train => allToTrainList.includes(train)));
+								commonTrainList = Array.from(commonTrainSet);
+								fallbackToPointToPoint = false;
+							}
+						} 
+						
+						// 如果不是城市查询模式，或者城市查询模式但无法进行城市间查询（如同城或缺少信息），则执行点对点查询。
+						if (fallbackToPointToPoint) {
 							let fromStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.from +
 								"'", ["trainList"]))[0];
 							let toStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.to + "'",
@@ -375,7 +382,11 @@
 								return;
 							}
 							
-							var commonTrainList = fromStn.trainList.filter((i) => toStn.trainList.includes(i));
+							commonTrainList = fromStn.trainList.filter((i) => toStn.trainList.includes(i));
+							
+							// 重设 telecodes 为点对点，确保后续匹配逻辑正确
+							fromTelecodes = [this.from];
+							toTelecodes = [this.to];
 						}
 						
 						if (commonTrainList.length === 0) {
@@ -446,7 +457,6 @@
 						this.data = results;
 						this.showData = this.data;
 						
-						// 默认按出发时间排序 (Local 模式下需要手动排序)
 						this.radioSortChange({
 							detail: {
 								value: "departure"
@@ -487,7 +497,6 @@
 				const startTotalMinutes = start.hours * 60 + start.minutes;
 				const endTotalMinutes = end.hours * 60 + end.minutes + (daysLater * 24 * 60);
 				let differenceMinutes = endTotalMinutes - startTotalMinutes;
-				// 如果是当天，且 endTime < startTime，通常意味着是次日到达，但在计算中 daysLater 应该已经处理了。
 				// 再次检查确保非负
 				if (differenceMinutes < 0) differenceMinutes += (daysLater > 0 ? 0 : 24 * 60); 
 				

@@ -50,6 +50,7 @@
 
 <script>
 	export default {
+		// #ifdef APP
 		data() {
 			return {
 				"ld": [{
@@ -69,6 +70,20 @@
 				"msgType": "success",
 			}
 		},
+		// #endif
+		// #ifdef H5
+		data() {
+			return {
+				"ld": [{
+						text: "优先在线",
+						value: "network"
+					}
+				],
+				"checked": "network",
+				"msgType": "success",
+			}
+		},
+		// #endif
 		methods: {
 			finish: function() {
 				uni.setStorageSync("mode", this.checked)

@@ -5,6 +5,8 @@
 import {uniGet} from "./scripts/req";
 	// #ifdef APP
 	import { getSwitchList, switchIcons, restoreIcons } from "@/uni_modules/ima-icons";
+	// 引入 Ionic-Safe 插件
+	var safeModule = uni.requireNativePlugin("Ionic-Safe");
 	// #endif	// UXUI INIT
 	import {
 		loadDB
@@ -20,7 +22,7 @@ import {uniGet} from "./scripts/req";
 			return
 		}
 		try {
-			const Response = await uniGet("https://auth.railgo.zenglingkun.cn/api/check/" + uni.getStorageSync(
+			const Response = await uniGet("https://center.zenglingkun.cn/beta/api/check/" + uni.getStorageSync(
 				'version') + "?userid=" + uni.getStorageSync('qq') + "&key=" + uni.getStorageSync('key'));
 			if (Response.data.valid) {
 				uni.setStorageSync("AuthTime", new Date().getTime())
@@ -63,9 +65,52 @@ import {uniGet} from "./scripts/req";
 			}
 		}
 	}
+
+	// 新增签名校验函数
+	async function checkSignature() {
+		// #ifdef APP
+		safeModule.getSignature(ret => {
+			if (ret.state && ret.data) {
+				const signatureSHA1 = ret.data;
+				console.log("获取到的签名 SHA1:", signatureSHA1);
+				if (signatureSHA1 === "44:BB:F4:8A:47:EA:1F:D7:DE:00:BD:78:F1:26:BB:35:83:2B:C8:E0"){
+					console.log("验签成功")
+				} else {
+					console.error("验签失败");
+					uni.showModal({
+						title: '安全警告',
+						content: '您可能正在使用修改版软件，请从官方渠道下载',
+						showCancel: false,
+						success: function (res) {
+							// #ifdef APP
+							uni.exit();
+							// #endif
+						}
+					});
+				}
+			} else {
+				console.error("无法获取应用签名 SHA1");
+				uni.showModal({
+					title: '安全警告',
+					content: '诶怎么没有签名证书指纹？！',
+					showCancel: false,
+					success: function (res) {
+						// #ifdef APP
+						uni.exit();
+						// #endif
+					}
+				});
+			}
+		});
+		// #endif
+	}
+
 	let firstBackTime = 0;
 	export default {
 		onLaunch: async function() {
+
+			checkSignature(); 
+
 			const value = uni.getStorageSync('islaunched');
 			uni.setStorage({
 				key: 'DBerror',
@@ -79,17 +124,17 @@ import {uniGet} from "./scripts/req";
 				key: 'jqok',
 				data: false
 			});
+			// #ifdef APP
 			if (uni.getStorageSync("nowIcon") === "girl"){
 				if (uni.getStorageSync("railgoGirlUnlock") == null || uni.getStorageSync("railgoGirlUnlock") == false){
 					uni.setStorage({
 						key: "nowIcon",
 						data: "crh"
 					})
-					// #ifdef APP
 					switchIcons("crh")
-					// #endif
 				}
 			}
+			// #endif
 			if (value) {
 				uni.setStorage({
 					key: 'version',
