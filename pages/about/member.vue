@@ -83,7 +83,7 @@
 				title-font-size="35rpx"></uni-section>
 			<view class="ux-flex ux-space-around ux-justify-content-center">
 				<view class="ux-text-center ux-pl ux-pr">
-					慈云数据 <br> 提供云计算支持
+					慈云数据 (zovps.com) <br> 提供云计算支持
 				</view>
 			</view>
 		</view>

@@ -255,21 +255,25 @@
 				<uni-section title="交路" type="line" style="background-color: transparent;"
 					title-font-size="28rpx"></uni-section>
 				<navigator v-for="(item,index) in (carData.diagram || [])" :key="index"
-					:url="'/pages/train/trainResult?keyword='+item.train_num+'&date='+date">
+					:url="'/pages/train/trainResult?keyword='+(item.train_num || item.number)+'&date='+date">
 					<view class="ux-bg-white ux-border-radius ux-mt-small ux-flex">
 						<view style="border-bottom-left-radius: 10rpx; border-top-left-radius:10rpx;"
-							:style="'background-color:'+colorMap[item.train_num[0]]">
+							:style="'background-color:'+colorMap[(item.train_num || item.number)[0]]">
 							&nbsp;&nbsp;
 						</view>
 						<view class="ux-flex ux-align-items-center ux-space-between ux-pr ux-pt ux-pb ux-pl-small"
 							style="width:100%;">
 							<view style="width:calc(100% - 70px);">
 								<view class="ux-flex ux-align-items-center">
-									<text class="consolas" style="font-size:40rpx;">{{item.train_num || ''}}</text>
+									<text class="consolas" style="font-size:40rpx;">{{item.train_num || item.number || ''}}</text>
 								</view>
-								<text class="ux-text-small">{{item.from ? item.from[0] : ''}}
-									{{item.from ? item.from[1] : ''}} ⋙ {{item.to ? item.to[0] : ''}}
-									{{item.to ? item.to[1] : ''}}</text>
+								<text class="ux-text-small">
+									{{Array.isArray(item.from) && item.from.length > 0 ? item.from[0] : ''}}
+									{{Array.isArray(item.from) && item.from.length > 1 ? item.from[1] : ''}}
+									⋙ 
+									{{Array.isArray(item.to) && item.to.length > 0 ? item.to[0] : ''}}
+									{{Array.isArray(item.to) && item.to.length > 1 ? item.to[1] : ''}}
+								</text>
 							</view>
 							<text class="ux-text"><text class="icon">&#xe5c8;</text></text>
 						</view>
@@ -415,6 +419,7 @@
 			}
 		},
 		onLoad(options) {
+			// 在此统一处理 train_num 和 number
 			this.train = options.keyword ? options.keyword.split("/")[0].toUpperCase() : '';
 			this.keyword = options.keyword ? options.keyword.toUpperCase() : '';
 			this.title = this.train;
@@ -719,6 +724,14 @@
 							})
 							return; // 结束执行
 						}
+                        
+                        // 【网络模式的关键修正】: 强制净化 diagram 数组的子元素
+                        const processedDiagram = Array.isArray(result.diagram) ? result.diagram.map(item => ({
+                            ...item,
+                            // 确保 from 和 to 属性是数组，如果不是，则初始化为空数组
+                            from: Array.isArray(item.from) ? item.from : [],
+                            to: Array.isArray(item.to) ? item.to : []
+                        })) : [];
 
 						// 成功处理
 						this.carData = {
@@ -743,7 +756,7 @@
 							carOwner: result.carOwner || '',
 							car: result.car || '',
 							rundays: Array.isArray(result.rundays) ? result.rundays : [],
-							diagram: Array.isArray(result.diagram) ? result.diagram : []
+							diagram: processedDiagram // 使用强制净化的交路数据
 						};
 						this.cardColor = this.colorMap[this.carData.numberKind] || '#114598';
 						loadSuccess = true; 
@@ -755,6 +768,38 @@
 
 						if (result && result.length > 0) {
 							// 成功处理
+							let rawData = toRaw(result[0]);
+
+							// 【本地模式修正】：如果 SQLite 中存储的是 JSON 字符串，需要进行解析
+							if (typeof rawData.diagram === 'string') {
+								try {
+									rawData.diagram = JSON.parse(rawData.diagram);
+								} catch (e) {
+									console.error("Failed to parse diagram JSON string:", e);
+									rawData.diagram = []; // 解析失败则置为空数组
+								}
+							}
+                            
+                            // 【本地模式修正】：timetable 也可能是字符串，同样需要解析
+                            if (typeof rawData.timetable === 'string') {
+								try {
+									rawData.timetable = JSON.parse(rawData.timetable);
+								} catch (e) {
+									console.error("Failed to parse timetable JSON string:", e);
+									rawData.timetable = []; // 解析失败则置为空数组
+								}
+							}
+                            // 【本地模式修正】：numberFull 也可能是字符串，同样需要解析
+                            if (typeof rawData.numberFull === 'string') {
+								try {
+									rawData.numberFull = JSON.parse(rawData.numberFull);
+								} catch (e) {
+									console.error("Failed to parse numberFull JSON string:", e);
+									rawData.numberFull = []; // 解析失败则置为空数组
+								}
+							}
+
+
 							this.carData = {
 								numberKind: '',
 								numberFull: [],
@@ -766,8 +811,10 @@
 								car: '',
 								rundays: [],
 								diagram: [],
-								...toRaw(result[0])
+								...rawData
 							};
+                            
+							// 修正后的代码块：现在 this.carData.diagram 应该是一个数组
 							for (var i = 0; i < this.carData.diagram.length; i++) {
 								let dg = toRaw(await doQuery("SELECT code, numberFull FROM trains WHERE number='" + this
 									.carData.diagram[i].train_num + "'"))[0];
@@ -775,6 +822,7 @@
 									Object.assign(this.carData.diagram[i], dg);
 								}
 							}
+                            
 							this.carData.timetable = (this.carData.timetable || []).map(item => ({
 								station: '',
 								stationTelecode: '',
