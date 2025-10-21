@@ -13,7 +13,7 @@
 			<view v-if="isVague" class="ux-text-small ux-opacity-5 ux-color-primary ux-mt-small">
 				<text class="icon">&#xe88e;</text>&nbsp;当前查询结果包含同城所有车站间的列车
 			</view>
-			</view>
+		</view>
 		<view class="ux-pl ux-pr ux-pb">
 			<view class="ux-padding-small ux-h6 ux-text-center"
 				style="background-color:#e9eef5;border:1px solid #114598;border-radius:10rpx;color:#114598;">
@@ -44,17 +44,18 @@
 						style="width:100%;">
 						<view>
 							<text class="consolas" style="font-size:45rpx;">
-								{{item.fromDepart}}
+								{{item.timetable[item.fromPos].depart}}
 							</text>
 							<br>
 							<text class="ux-text-small">
-								{{item.fromStationName || item.timetable[item.fromPos].station}}
+								{{item.timetable[item.fromPos].station}}
 							</text>
 						</view>
 						<view class="ux-text-center">
 							<text class="consolas" style="font-size:40rpx;">
 								{{item.numberKind + item.numberFull.join("/").replace(item.numberKind, "").replace(item.numberKind, "")}}
 							</text>
+							<br>
 							<view style="border-top: 0.1rpx solid #757575;width:30vw;margin: 5rpx 0;"></view>
 							<text class="ux-text-small ux-opacity-5">
 								{{item.passTime}}
@@ -63,15 +64,15 @@
 						<view>
 							<view class="ux-flex ux-align-items-start">
 								<text class="consolas" style="font-size:45rpx;">
-									{{item.toArrive}}
+									{{item.timetable[item.toPos].arrive}}
 								</text>
-								<text v-if="item.dayDiff!=0"
+								<text v-if="item.timetable[item.toPos].day - item.timetable[item.fromPos].day!=0"
 									style="font-size:20rpx">
-									+{{item.dayDiff}}
+									+{{item.timetable[item.toPos].day - item.timetable[item.fromPos].day}}
 								</text>
 							</view>
 							<text class="ux-text-small">
-								{{item.toStationName || item.timetable[item.toPos].station}}
+								{{item.timetable[item.toPos].station}}
 							</text>
 						</view>
 					</view>
@@ -108,7 +109,7 @@
 					</radio>
 					<br>
 					<radio color="#114598" value="speed" class="ux-mr ux-mt-small" :checked="this.sortState=='speed'">
-						<text class="ux-text-small">按历时</text>
+						<text class="ux-text-small">按速度</text>
 					</radio>
 				</radio-group>
 			</view>
@@ -199,28 +200,25 @@
 				"colorMap": TRAIN_KIND_COLOR_MAP,
 				"sortState": "departure",
 				"filterTypeState": "GDCZTK12345678SLY",
-				"isVague": false, // 是否为同城查询
-				// 移除了 fromCity 和 toCity 属性，不再依赖 train_sts_fieldA/B
+				// 1. 新增 isVague 状态，用于判断是否开启同城查询
+				"isVague": false 
 			}
 		},
-		async onLoad(options) {
+		onLoad(options) {
 			this.from = options.from;
 			this.to = options.to;
 			this.error = "";
 			this.date = options.date;
-			// 检查 city 参数
-			this.isVague = options.city === 'true';
-
+			// 2. 根据 options.city 参数设置 isVague 状态
+			this.isVague = options.city === 'true'; 
+			
 			const c = uni.getStorageSync("search");
 			uni.setStorage({
 				key: 'search',
 				data: c + 1
 			});
-
-			// 已移除：在查询前获取城市信息（用于本地查询），现在直接在 fillInData 中使用 URL telecode 查询 DB 获得城市信息。
-
 			try {
-				await this.fillInData();
+				this.fillInData();
 			} catch (error) {
 				uni.setStorage({
 					"key": "DBerror",
@@ -241,19 +239,21 @@
 			fillInData: async function() {
 				const mode = uni.getStorageSync("mode");
 				if (mode == "network") {
-					// --- 网络模式逻辑 ---
+					// --- 在线模式逻辑 (已添加同城查询支持) ---
 					try {
 						uni.showLoading({
 							title: "加载中"
 						});
+						
+						// 4.1. 构造基础 URL
+						let apiUrl = `https://data.railgo.zenglingkun.cn/api/train/sts_query?from=${this.from}&to=${this.to}&date=${this.date}`;
 
-						// 调整 API URL：如果开启同城查询，则添加 &city=true 参数
-						let url = `https://data.railgo.zenglingkun.cn/api/train/sts_query?from=${this.from}&to=${this.to}&date=${this.date}`;
+						// 4.2. 如果开启了同城查询，则添加 city=true 参数
 						if (this.isVague) {
-							url += "&city=true";
+							apiUrl += "&city=true";
 						}
-
-						const resp = await uniGet(url);
+						
+						const resp = await uniGet(apiUrl);
 						const result = resp.data;
 
 						if (result.error) {
@@ -267,30 +267,11 @@
 							return;
 						}
 
-						// API 模式下，API 已经计算好 fromDepart/toArrive/dayDiff/passTime
-						// 并且已经按出发时间排序
-						this.data = result.map(item => {
-							// 提取实际匹配的出发/到达站名称
-							const fromStnInfo = item.timetable.find(stop => stop.stationTelecode === item.fromStationTelecode);
-							const toStnInfo = item.timetable.find(stop => stop.stationTelecode === item.toStationTelecode);
-							
-							return {
-								...item,
-								// 将 API 提供的关键信息映射到现有结构
-								fromDepart: item.fromDepart,
-								toArrive: item.toArrive,
-								dayDiff: item.dayDiff,
-								passTime: item.passTime,
-								fromStationName: fromStnInfo ? fromStnInfo.station : '',
-								toStationName: toStnInfo ? toStnInfo.station : ''
-							}
-						});
+						this.data = result;
 						this.showData = this.data;
-
-						// 再次调用排序，确保按用户默认设置排序 (API 默认按出发时间，但这里确保遵循组件的默认/上次设置)
 						this.radioSortChange({
 							detail: {
-								value: this.sortState || "departure"
+								value: "departure"
 							}
 						});
 
@@ -320,158 +301,80 @@
 						});
 					}
 				} else {
+					// --- 离线模式逻辑 (保持原有点对点查询) ---
 					try {
 						uni.showLoading({
 							title: "加载中"
 						});
-
-						let fromTelecodes = [this.from];
-						let toTelecodes = [this.to];
-						var commonTrainList = [];
-						let fallbackToPointToPoint = true; // 默认使用点对点
-
-						if (this.isVague) {
-							// 步骤 1.1: 使用URL传入的telecode查询其city
-							const fromStnInfo = toRaw(await doQuery(
-								`SELECT city FROM stations WHERE telecode='${this.from}'`, ["city"]
-							))[0];
-							const toStnInfo = toRaw(await doQuery(
-								`SELECT city FROM stations WHERE telecode='${this.to}'`, ["city"]
-							))[0];
-							
-							const fromCity = fromStnInfo ? fromStnInfo.city : null;
-							const toCity = toStnInfo ? toStnInfo.city : null;
-							
-							// 确保找到城市信息且城市不同，才进行城市对城市查询
-							if (fromCity && toCity && fromCity !== toCity) {
-								// 步骤 1.2: 城市对城市查询
-								const fromStns = toRaw(await doQuery(
-									`SELECT telecode, trainList FROM stations WHERE city='${fromCity}' AND trainList IS NOT NULL`,
-									["telecode", "trainList"]
-								));
-								const toStns = toRaw(await doQuery(
-									`SELECT telecode, trainList FROM stations WHERE city='${toCity}' AND trainList IS NOT NULL`,
-									["telecode", "trainList"]
-								));
-								
-								fromTelecodes = fromStns.map(stn => stn.telecode);
-								toTelecodes = toStns.map(stn => stn.telecode);
-								
-								// 合并所有 trainList 以找出公共列车
-								let allFromTrainList = [];
-								fromStns.forEach(stn => allFromTrainList.push(...stn.trainList));
-								let allToTrainList = [];
-								toStns.forEach(stn => allToTrainList.push(...stn.trainList));
-								
-								let commonTrainSet = new Set(allFromTrainList.filter(train => allToTrainList.includes(train)));
-								commonTrainList = Array.from(commonTrainSet);
-								fallbackToPointToPoint = false;
-							}
-						} 
+						// 离线模式继续只执行点对点查询
+						let fromStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.from +
+							"'", ["trainList"]))[0];
+						let toStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.to + "'",
+							["trainList"]))[0];
 						
-						// 如果不是城市查询模式，或者城市查询模式但无法进行城市间查询（如同城或缺少信息），则执行点对点查询。
-						if (fallbackToPointToPoint) {
-							let fromStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.from +
-								"'", ["trainList"]))[0];
-							let toStn = toRaw(await doQuery("SELECT trainList FROM stations WHERE telecode='" + this.to + "'",
-								["trainList"]))[0];
-								
-							if (!fromStn || !toStn || !fromStn.trainList || fromStn.trainList.length == 0 || !toStn.trainList || toStn.trainList.length == 0) {
-								uni.hideLoading();
-								this.$refs.error_noky.open();
-								return;
-							}
-							
-							commonTrainList = fromStn.trainList.filter((i) => toStn.trainList.includes(i));
-							
-							// 重设 telecodes 为点对点，确保后续匹配逻辑正确
-							fromTelecodes = [this.from];
-							toTelecodes = [this.to];
-						}
+						// !!! 警告：这里 trainList 仍然可能是一个 JSON 字符串而不是数组，
+						// !!! 但根据您的要求，我没有修复离线模式的 trainList 解析问题。
+						// !!! 离线模式代码如下：
 						
-						if (commonTrainList.length === 0) {
+						if (fromStn.trainList.length == 0 || toStn.trainList.length == 0) {
 							uni.hideLoading();
-							this.$refs.error_nosuch.open();
+							this.$refs.error_noky.open();
 							return;
 						}
 
-						// 步骤2: 查询所有公共列车的详情
+						let d = [];
 						let all = toRaw(await doQuery(
 							"SELECT code, number, numberFull, numberKind, timetable, rundays FROM trains WHERE number IN ('" +
-							commonTrainList.join("','") + "')", ["code", "number", "numberFull", "numberKind", "timetable",
+							fromStn.trainList
+							.filter((i) => {
+								return toStn.trainList.includes(i)
+							}).join("','") + "')", ["code", "number", "numberFull", "numberKind", "timetable",
 								"rundays"
 							]));
-							
-						// 步骤3: 遍历列车，匹配最早出发和最晚到达的车站
-						let results = [];
+
 						all.forEach((k) => {
 							let fromPos = -1;
 							let toPos = -1;
-							let fromStop = null;
-							let toStop = null;
-							
 							if (!k.rundays.includes(this.date)) {
-								return; // 跳过日期不匹配的列车
+								return;
 							}
-							
-							// 查找最早的出发站
 							for (var i = 0; i < k.timetable.length; i++) {
-								if (fromTelecodes.includes(k.timetable[i].stationTelecode)) {
+								if (k.timetable[i].stationTelecode == this.from) {
 									fromPos = i;
-									fromStop = k.timetable[i];
+								}
+								if (k.timetable[i].stationTelecode == this.to) {
+									toPos = i;
 									break;
 								}
 							}
-							
-							// 从出发站之后查找第一个在 toTelecodes 列表中的车站
 							if (fromPos != -1) {
-								for (var i = fromPos + 1; i < k.timetable.length; i++) {
-									if (toTelecodes.includes(k.timetable[i].stationTelecode)) {
-										toPos = i;
-										toStop = k.timetable[i];
-										// 找到即可停止，保证顺序
-										break;
-									}
-								}
-							}
-							
-							if (fromStop && toStop && fromPos < toPos) {
 								k.fromPos = fromPos;
 								k.toPos = toPos;
 								k.showFlag = true;
-								k.fromDepart = fromStop.depart;
-								k.toArrive = toStop.arrive;
-								k.dayDiff = toStop.day - fromStop.day;
-								k.passTime = this.calculateTimeDifference(
-									k.fromDepart, 
-									k.toArrive, 
-									k.dayDiff
-								);
-								// 添加实际匹配的站名，用于显示
-								k.fromStationName = fromStop.station;
-								k.toStationName = toStop.station;
-								results.push(k);
+								k.passTime = this.calculateTimeDifference(k.timetable[k.fromPos].depart, k
+									.timetable[k.toPos].arrive, k.timetable[k.toPos].day - k.timetable[k
+										.fromPos].day);
+								this.data.push(k);
 							}
-						});
-			
-						this.data = results;
+						}, this);
+
 						this.showData = this.data;
-						
 						this.radioSortChange({
 							detail: {
 								value: "departure"
 							}
 						});
-			
+
 						if (toRaw(this.data).length == 0) {
 							uni.hideLoading();
 							this.$refs.error_nosuch.open();
 							return;
 						}
 						uni.hideLoading();
-			
+
 					} catch (error) {
 						uni.hideLoading();
+						// 注意：plus.nativeUI.alert 仅在 H5+ 或 App 平台可用
 						if (typeof plus !== 'undefined' && plus.nativeUI) {
 							plus.nativeUI.alert(error);
 						}
@@ -497,13 +400,10 @@
 				const startTotalMinutes = start.hours * 60 + start.minutes;
 				const endTotalMinutes = end.hours * 60 + end.minutes + (daysLater * 24 * 60);
 				let differenceMinutes = endTotalMinutes - startTotalMinutes;
-				// 再次检查确保非负
-				if (differenceMinutes < 0) differenceMinutes += (daysLater > 0 ? 0 : 24 * 60); 
-				
+				if (differenceMinutes < 0) differenceMinutes += 24 * 60;
 				const hours = Math.floor(differenceMinutes / 60);
 				const minutes = differenceMinutes % 60;
-				// 适配网络模式的格式
-				return `${hours}时${minutes.toString().padStart(2, '0')}分`;
+				return `${hours}h${minutes.toString().padStart(2, '0')}m`;
 			},
 			openSortMenu: function() {
 				this.$refs.menu_sort.open();
@@ -515,30 +415,23 @@
 				this.sortState = e.detail.value;
 				switch (e.detail.value) {
 					case "speed":
-						// 按历时排序
 						this.showData = this.data.sort((a, b) => {
-							// 将 'X时Y分' 转换为总分钟数进行比较
-							const parseDuration = (passTime) => {
-								if (!passTime) return 999999;
-								const match = passTime.match(/(\d+)时(\d+)分/);
-								if (match) {
-									return parseInt(match[1]) * 60 + parseInt(match[2]);
-								}
-								return 999999;
+							if (a.passTime > b.passTime) {
+								return 1;
 							}
-							return parseDuration(a.passTime) - parseDuration(b.passTime);
+							if (a.passTime < b.passTime) {
+								return -1;
+							}
+							return 0;
 						});
 						break;
 
 					case "departure":
 						this.showData = this.data.sort((a, b) => {
-							// 按出发时间排序 (HH:MM 字符串比较)
-							const departA = a.fromDepart || "99:99";
-							const departB = b.fromDepart || "99:99";
-							if (departA > departB) {
+							if (a.timetable[a.fromPos].depart > b.timetable[b.fromPos].depart) {
 								return 1;
 							}
-							if (departA < departB) {
+							if (a.timetable[a.fromPos].depart < b.timetable[b.fromPos].depart) {
 								return -1;
 							}
 							return 0;
@@ -547,11 +440,10 @@
 
 					case "arrival":
 						this.showData = this.data.sort((a, b) => {
-							// 确保使用 toArrive 和 dayDiff 字段
-							const arriveTimeA = (a.dayDiff * 1440) + this.timeToMinutes(a.toArrive);
-							const arriveTimeB = (b.dayDiff * 1440) + this.timeToMinutes(b.toArrive);
-							
-							return arriveTimeA - arriveTimeB;
+							// 比较到达时间 + 跨天数
+							const aArrive = this.timeToMinutes(a.timetable[a.toPos].arrive) + (a.timetable[a.toPos].day * 1440);
+							const bArrive = this.timeToMinutes(b.timetable[b.toPos].arrive) + (b.timetable[b.toPos].day * 1440);
+							return aArrive - bArrive;
 						});
 						break;
 
@@ -568,11 +460,7 @@
 			radioFilterChange: function(e) {
 				this.filterTypeState = e.detail.value.join("");
 				this.showData = this.data.filter((i) => {
-					const firstChar = i.number.charAt(0);
-					if (!isNaN(parseInt(firstChar))) {
-						return e.detail.value.includes("12345678");
-					}
-					return e.detail.value.join("").includes(firstChar);
+					return e.detail.value.join("").includes(i.number.charAt(0));
 				});
 			}
 		}

@@ -725,7 +725,7 @@
 							return; // 结束执行
 						}
                         
-                        // 【网络模式的关键修正】: 强制净化 diagram 数组的子元素
+                        // 【网络模式的关键修正】：强制净化 diagram 数组的子元素
                         const processedDiagram = Array.isArray(result.diagram) ? result.diagram.map(item => ({
                             ...item,
                             // 确保 from 和 to 属性是数组，如果不是，则初始化为空数组
@@ -798,6 +798,20 @@
 									rawData.numberFull = []; // 解析失败则置为空数组
 								}
 							}
+
+                            // 【本地模式的关键修正】：强制净化 diagram 数组的子元素
+                            // 1. 确保 rawData.diagram 是一个数组 before proceeding
+                            if (!Array.isArray(rawData.diagram)) {
+                                rawData.diagram = [];
+                            }
+
+                            // 2. Process/purify the diagram array
+                            rawData.diagram = rawData.diagram.map(item => ({
+                                ...item,
+                                // 确保 from 和 to 属性是数组，如果不是，则初始化为空数组
+                                from: Array.isArray(item.from) ? item.from : [],
+                                to: Array.isArray(item.to) ? item.to : []
+                            }));
 
 
 							this.carData = {
