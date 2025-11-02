@@ -190,10 +190,11 @@ import {uniGet} from "@/scripts/req.js";
 				});
 			},
 			async gotoDownloadApp() {
+				// 检查是否在 App 环境，否则给出提示
 				if (typeof plus === 'undefined') {
 					uni.showModal({
 						title: '提示',
-						content: '此功能仅支持原生APP环境',
+						content: '此功能仅支持原生App环境，请尝试手动复制链接到浏览器。',
 						showCancel: false
 					});
 					return;
@@ -206,6 +207,7 @@ import {uniGet} from "@/scripts/req.js";
 				
 				let downloadUrl = '';
 				try {
+					// 请求 API 获取下载链接
 					const downloadResponse = await uniGet("https://api.state.railgo.zenglingkun.cn/api/v1/url/pack/android");
 					if (downloadResponse.status === 200 && downloadResponse.data && downloadResponse.data.url) {
 						downloadUrl = downloadResponse.data.url;
@@ -222,63 +224,32 @@ import {uniGet} from "@/scripts/req.js";
 					return;
 				}
 				
-				uni.showLoading({
-					title: '正在下载 0%',
-					mask: true
-				});
+				uni.hideLoading();
+				
+				// 使用 plus.runtime.openURL() 直接跳转到系统浏览器下载
+				if (downloadUrl) {
+					uni.showToast({
+						title: '即将跳转浏览器下载',
+						icon: 'none',
+						duration: 2000
+					});
 
-				const downloadTask = uni.downloadFile({
-					url: downloadUrl,
-					success: (res) => {
-						if (res.statusCode === 200) {
-							uni.hideLoading();
-							uni.showToast({
-								title: '下载成功，正在安装...',
-								icon: 'none',
-								duration: 2000
-							});
-							// 调用plus.runtime.install安装应用
-							plus.runtime.install(res.tempFilePath, {
-								force: false
-							}, (res) => {
-								uni.showToast({
-									title: '安装成功',
-									icon: 'success'
-								});
-							}, (err) => {
-								uni.showModal({
-									title: '安装失败',
-									content: `安装文件可能已损坏，或权限不足。错误码：${err.code}，错误信息：${err.message}`,
-									showCancel: false
-								});
-								console.error('安装失败:', err);
-							});
-						} else {
-							uni.hideLoading();
-							uni.showModal({
-								title: '下载失败',
-								content: '下载更新包失败，请稍后再试。',
-								showCancel: false
-							});
-						}
-					},
-					fail: (err) => {
-						uni.hideLoading();
+					// 调用plus.runtime.openURL，在App端会使用系统浏览器打开链接
+					plus.runtime.openURL(downloadUrl, (res) => {
+						// 失败回调
 						uni.showModal({
-							title: '下载失败',
-							content: `网络错误，无法下载。错误码：${err.errMsg}`,
+							title: '跳转失败',
+							content: `无法打开浏览器，请手动复制以下链接下载：\n${downloadUrl}`,
 							showCancel: false
 						});
-					}
-				});
-
-				// 监听下载进度
-				downloadTask.onProgressUpdate((res) => {
-					uni.showLoading({
-						title: `正在下载 ${res.progress}%`,
-						mask: true
 					});
-				});
+				} else {
+					uni.showModal({
+						title: '错误',
+						content: '未能获取有效的下载链接。',
+						showCancel: false
+					});
+				}
 			}
 		}
 	}

@@ -19,8 +19,8 @@
 						  <uni-easyinput placeholder="请输入公测码" @input="inputCode" style="min-width: 200px; flex-grow: 1;"></uni-easyinput>
 						</view>
 						<view class="ux-flex " style="align-items: center;">
-						  <text style="width: 80px; text-align: right;" class="">QQ号：</text>
-						  <uni-easyinput placeholder="请输入QQ号" @input="inputQQ" style="min-width: 200px; flex-grow: 1;"></uni-easyinput>
+						  <text style="width: 80px; text-align: right;" class="">注册邮箱：</text>
+						  <uni-easyinput placeholder="请输入邮箱" @input="inputQQ" style="min-width: 200px; flex-grow: 1;"></uni-easyinput>
 						</view>
 					</view>
 			<br>
@@ -78,7 +78,7 @@ import {uniGet} from "@/scripts/req.js";
 						
 					} else {
 						this.msgType = "error"
-						this.messageText = "请检查公测码与QQ号是否正确"
+						this.messageText = "请检查公测码与邮箱是否正确"
 						this.$refs.message.open()
 					}
 					this.load=false;

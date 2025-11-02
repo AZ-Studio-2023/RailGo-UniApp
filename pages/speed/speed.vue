@@ -63,7 +63,7 @@
 				"hemisphere_lon": "未知",
 				"isHighAccuracy": false,
 				"speedHistory": [], 
-				"HISTORY_SIZE": 10 
+				"HISTORY_SIZE": 5 
 			}
 		},
 		onLoad() {
@@ -89,7 +89,7 @@
 			},
 			startSpeedUpdate() {
 				// 保持 1 秒更新一次
-				const interval = 1000; 
+				const interval = 500; 
 				this.updateInterval = setInterval(() => {
 					this.getLocationSpeed();
 				}, interval);

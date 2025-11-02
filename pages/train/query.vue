@@ -93,7 +93,7 @@
 					@change="inputDate" />
 			</view>
 			
-			<view v-if="selectIndex==1" class="ux-flex ux-align-items-center ux-mb-small">
+			<view v-if="selectIndex==1 && isNetworkMode" class="ux-flex ux-align-items-center ux-mb-small">
 				<switch class="ux-pb-small" color="#114598" style="transform:scale(0.7);margin-left:-1vh;"
 					@change="vague" :checked="isVague"/>
 				<text class="va">查询同城车站</text>
@@ -151,10 +151,14 @@
 				"selectIndex": 0,
 				"stsSelectionA": "",
 				"stsSelectionB": "",
-				"isVague": false 
+				"isVague": false,
+				"isNetworkMode": false // ADDED: New data property to track the mode
 			}
 		},
 		onShow() {
+			// MODIFICATION HERE: Check and set the isNetworkMode status on show
+			this.isNetworkMode = uni.getStorageSync("mode") === "network";
+			
 			let selectionA = uni.getStorageSync("train_sts_fieldA");
 			let selectionB = uni.getStorageSync("train_sts_fieldB");
 			if (!selectionA || !selectionB) {
